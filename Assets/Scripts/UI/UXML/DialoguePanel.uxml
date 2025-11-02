@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <!-- Main Dialogue Panel Container -->
+    <ui:VisualElement name="DialoguePanel" class="dialogue-panel">
+        
+        <!-- Speaker Section -->
+        <ui:VisualElement class="speaker-section">
+            <!-- Portrait Image (optional) -->
+            <ui:VisualElement name="PortraitImage" class="portrait" />
+            
+            <!-- Speaker Name -->
+            <ui:Label name="SpeakerName" text="Speaker Name" class="speaker-name" />
+        </ui:VisualElement>
+        
+        <!-- Dialogue Text Area -->
+        <ui:VisualElement class="dialogue-content">
+            <ui:Label name="DialogueText" text="Dialogue text will appear here..." class="dialogue-text" />
+        </ui:VisualElement>
+        
+        <!-- Continue Button -->
+        <ui:VisualElement class="button-container">
+            <ui:Button name="ContinueButton" text="Continue (Space)" class="continue-button" />
+        </ui:VisualElement>
+        
+    </ui:VisualElement>
+</ui:UXML>

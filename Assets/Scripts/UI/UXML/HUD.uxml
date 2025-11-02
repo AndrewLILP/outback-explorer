@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/USS/HUD.uss?fileID=7433441132597879392&amp;guid=9de7be3d74a294541a4674fc78d3da22&amp;type=3#HUD" />
+    <ui:VisualElement name="HUD" class="hud-container">
+        <ui:VisualElement name="Speedometer" class="speedometer">
+            <ui:Label name="SpeedLabel" text="0" class="speed-value" />
+            <ui:Label text="km/h" class="speed-unit" />
+        </ui:VisualElement>
+        <ui:VisualElement name="MissionIndicator" class="mission-indicator">
+            <ui:Label name="MissionText" class="mission-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

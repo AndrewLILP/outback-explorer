@@ -1,0 +1,54 @@
+/* HUD.uss - Stylesheet for Game HUD */
+
+/* Main HUD Container */
+.hud-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Speedometer (Bottom Right) */
+.speedometer {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    background-color: rgba(20, 20, 30, 0.8);
+    border-radius: 15px;
+    padding: 15px 25px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.3);
+    align-items: center;
+    min-width: 120px;
+}
+
+/* Speed Value (Large Number) */
+.speed-value {
+    font-size: 48px;
+    color: rgb(100, 200, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* Speed Unit (km/h) */
+.speed-unit {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    -unity-text-align: middle-center;
+    margin-top: 5px;
+}
+
+/* Mission Indicator (Top Left) */
+.mission-indicator {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background-color: rgba(30, 30, 40, 0.9);
+    border-radius: 10px;
+    padding: 10px 20px;
+    min-width: 200px;
+    display: none; /* Hidden by default */
+}
+
+.mission-text {
+    font-size: 16px;
+    color: rgb(255, 220, 150);
+}

@@ -1,0 +1,83 @@
+/* Dialogue.uss - Stylesheet for Dialogue UI */
+
+/* Main Dialogue Panel */
+.dialogue-panel {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    translate: -50% 0;
+    width: 80%;
+    max-width: 800px;
+    background-color: rgba(30, 30, 40, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Speaker Section */
+.speaker-section {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* Portrait Image */
+.portrait {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin-right: 15px;
+}
+
+/* Speaker Name */
+.speaker-name {
+    font-size: 22px;
+    color: rgb(255, 220, 150);
+    -unity-font-style: bold;
+}
+
+/* Dialogue Content Area */
+.dialogue-content {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    min-height: 80px;
+}
+
+/* Dialogue Text */
+.dialogue-text {
+    font-size: 18px;
+    color: rgb(240, 240, 240);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* Button Container */
+.button-container {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+/* Continue Button */
+.continue-button {
+    background-color: rgba(100, 150, 200, 0.8);
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border-width: 0;
+    transition-duration: 0.2s;
+}
+
+.continue-button:hover {
+    background-color: rgba(120, 170, 220, 1);
+    scale: 1.05;
+}
+
+.continue-button:active {
+    background-color: rgba(80, 130, 180, 1);
+    scale: 0.95;
+}
