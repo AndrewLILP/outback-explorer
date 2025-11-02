@@ -97,3 +97,33 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# ===== DAY 3 - IMPORTED ASSETS =====
+
+# Animal Assets (Australia Animals Pack)
+Assets/AustraliaAnimalsPackv1/
+
+# Rural Australia Environment Pack
+Assets/Pup Up Productions/
+
+# Terrain/Track Assets
+Assets/Snow mountain tracks/
+
+# PolyStang Car Asset (large models and textures)
+Assets/PolyStang/
+
+# Large file types
+*.fbx
+*.obj
+*.blend
+*.ma
+*.mb
+
+# Audio files
+*.wav
+*.mp3
+*.ogg
+
+# High-resolution textures
+**/Textures/4K/
+**/Textures/2K/
