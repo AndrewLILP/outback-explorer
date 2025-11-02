@@ -1,113 +1,122 @@
 // InteractionPromptUI.cs
 using UnityEngine;
 using UnityEngine.UIElements;
-using RelaxingDrive.World;
 
 namespace RelaxingDrive.UI
 {
     /// <summary>
-    /// Controls the interaction prompt UI using UI Toolkit.
-    /// Shows "Press E to [action]" when player is near an interactable object.
-    /// Observes PlayerInteractionDetector to know when to show/hide.
+    /// Controls the interaction prompt UI that shows messages like "Press E to Enter Car".
+    /// Uses UI Toolkit for rendering.
     /// </summary>
-    [RequireComponent(typeof(UIDocument))]
     public class InteractionPromptUI : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private PlayerInteractionDetector playerDetector;
+        [Header("UI Document")]
         [SerializeField] private UIDocument uiDocument;
 
-        [Header("Settings")]
-        [SerializeField] private string defaultPromptText = "Press E to interact";
+        [Header("UI Element Names")]
+        [SerializeField] private string promptContainerName = "interaction-prompt-container";
+        [SerializeField] private string promptTextName = "prompt-text";
 
-        // UI Elements
-        private VisualElement interactionPrompt;
-        private Label interactionIcon;
-        private Label interactionText;
-
-        // State
-        private IInteractable currentInteractable;
+        private VisualElement promptContainer;
+        private Label promptText;
+        private bool isVisible = false;
 
         private void Awake()
         {
+            // Get UI Document if not assigned
             if (uiDocument == null)
+            {
                 uiDocument = GetComponent<UIDocument>();
+            }
+
+            if (uiDocument == null)
+            {
+                Debug.LogError("[InteractionPromptUI] No UIDocument found! Add a UIDocument component.");
+                return;
+            }
         }
 
-        private void OnEnable()
+        private void Start()
         {
-            SetupUIElements();
+            InitializeUI();
+            HidePrompt(); // Start hidden
         }
 
-        private void SetupUIElements()
+        private void InitializeUI()
         {
+            if (uiDocument == null) return;
+
             var root = uiDocument.rootVisualElement;
 
-            // Query elements
-            interactionPrompt = root.Q<VisualElement>("InteractionPrompt");
-            interactionIcon = root.Q<Label>("InteractionIcon");
-            interactionText = root.Q<Label>("InteractionText");
+            // Try to find existing elements
+            promptContainer = root.Q<VisualElement>(promptContainerName);
+            promptText = root.Q<Label>(promptTextName);
 
-            // Start hidden
-            HidePrompt();
+            // If not found, create them programmatically
+            if (promptContainer == null)
+            {
+                promptContainer = new VisualElement();
+                promptContainer.name = promptContainerName;
+                promptContainer.AddToClassList("interaction-prompt-container");
+                root.Add(promptContainer);
+
+                Debug.Log("[InteractionPromptUI] Created prompt container programmatically");
+            }
+
+            if (promptText == null)
+            {
+                promptText = new Label("Press E");
+                promptText.name = promptTextName;
+                promptText.AddToClassList("prompt-text");
+
+                // Create prompt box
+                var promptBox = new VisualElement();
+                promptBox.AddToClassList("interaction-prompt");
+                promptBox.Add(promptText);
+
+                promptContainer.Add(promptBox);
+
+                Debug.Log("[InteractionPromptUI] Created prompt text programmatically");
+            }
         }
 
-        private void Update()
+        /// <summary>
+        /// Shows the interaction prompt with the specified message.
+        /// </summary>
+        public void ShowPrompt(string message)
         {
-            if (playerDetector == null)
+            if (promptText == null)
+            {
+                Debug.LogWarning("[InteractionPromptUI] Cannot show prompt - UI not initialized");
                 return;
+            }
 
-            // Check if player has an interactable nearby
-            if (playerDetector.HasInteractable)
+            promptText.text = message;
+
+            if (promptContainer != null)
             {
-                currentInteractable = playerDetector.ClosestInteractable;
-                ShowPrompt(currentInteractable.GetInteractionPrompt());
+                promptContainer.style.display = DisplayStyle.Flex;
             }
-            else
-            {
-                currentInteractable = null;
-                HidePrompt();
-            }
+
+            isVisible = true;
         }
 
         /// <summary>
-        /// Shows the prompt with custom text
+        /// Hides the interaction prompt.
         /// </summary>
-        private void ShowPrompt(string promptText)
+        public void HidePrompt()
         {
-            if (interactionPrompt == null)
-                return;
-
-            // Update text
-            if (interactionText != null)
+            if (promptContainer != null)
             {
-                interactionText.text = promptText;
+                promptContainer.style.display = DisplayStyle.None;
             }
 
-            // Show prompt
-            if (interactionPrompt.style.display == DisplayStyle.None)
-            {
-                interactionPrompt.style.display = DisplayStyle.Flex;
-            }
+            isVisible = false;
         }
 
         /// <summary>
-        /// Hides the interaction prompt
+        /// Returns whether the prompt is currently visible.
         /// </summary>
-        private void HidePrompt()
-        {
-            if (interactionPrompt != null)
-            {
-                interactionPrompt.style.display = DisplayStyle.None;
-            }
-        }
-
-        /// <summary>
-        /// Public method to set the player detector reference
-        /// </summary>
-        public void SetPlayerDetector(PlayerInteractionDetector detector)
-        {
-            playerDetector = detector;
-        }
+        public bool IsVisible => isVisible;
     }
 }

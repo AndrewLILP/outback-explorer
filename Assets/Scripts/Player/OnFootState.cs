@@ -1,178 +1,170 @@
-// OnFootState.cs - UPDATED VERSION
+// OnFootState.cs
 using UnityEngine;
 using RelaxingDrive.World;
 
 namespace RelaxingDrive.Player
 {
     /// <summary>
-    /// Player state when walking on foot.
-    /// Handles WASD movement using CharacterController.
-    /// Handles interaction with objects (E key).
-    /// Uses PlayerInteractionDetector to find nearby interactables.
+    /// State when player is walking around (not in car).
+    /// Handles character controller movement and interaction detection.
+    /// Shows "Press E to Enter Car" prompt when near car.
+    /// 
+    /// POLISHED VERSION - Proper UI prompt integration, reduced debug spam
     /// </summary>
     public class OnFootState : PlayerState
     {
-        private GameObject playerCharacter;
         private CharacterController characterController;
-        private FollowCamera camera;
-        private GameObject carGameObject;
-
-        // NEW: Reference to interaction detector
         private PlayerInteractionDetector interactionDetector;
+        private UI.InteractionPromptUI interactionPrompt;
 
         // Movement settings
         private float moveSpeed = 5f;
         private float turnSpeed = 10f;
         private float gravity = -9.81f;
-        private Vector3 verticalVelocity;
+        private Vector3 velocity;
 
-        // Interaction
-        private float interactionRange = 3f;
+        // Car interaction
+        private float carInteractionRange = 3f;
+        private bool isNearCar = false;
 
-        public OnFootState(PlayerStateManager manager) : base(manager)
-        {
-            playerCharacter = manager.PlayerCharacter;
-            camera = manager.FollowCamera;
-            carGameObject = manager.CarGameObject;
-
-            // Get or add CharacterController
-            if (playerCharacter != null)
-            {
-                characterController = playerCharacter.GetComponent<CharacterController>();
-                if (characterController == null)
-                {
-                    characterController = playerCharacter.AddComponent<CharacterController>();
-                    // Setup default character controller values
-                    characterController.height = 2f;
-                    characterController.radius = 0.5f;
-                    characterController.center = new Vector3(0, 1f, 0);
-                }
-
-                // Get PlayerInteractionDetector component
-                interactionDetector = playerCharacter.GetComponent<PlayerInteractionDetector>();
-                if (interactionDetector == null)
-                {
-                    Debug.LogWarning("OnFootState: PlayerInteractionDetector not found on player! Adding one...");
-                    interactionDetector = playerCharacter.AddComponent<PlayerInteractionDetector>();
-                }
-            }
-        }
+        public OnFootState(PlayerStateManager manager) : base(manager) { }
 
         public override void Enter()
         {
-            Debug.Log("Entered OnFoot State");
+            // Get or add CharacterController
+            characterController = stateManager.PlayerCharacter.GetComponent<CharacterController>();
+            if (characterController == null)
+            {
+                characterController = stateManager.PlayerCharacter.AddComponent<CharacterController>();
+                characterController.height = 2f;
+                characterController.radius = 0.5f;
+            }
+
+            // Get interaction detector
+            interactionDetector = stateManager.PlayerCharacter.GetComponent<PlayerInteractionDetector>();
+
+            // Get interaction prompt UI
+            interactionPrompt = Object.FindFirstObjectByType<UI.InteractionPromptUI>();
+
+            // Position player next to car
+            Vector3 exitPosition = stateManager.CarGameObject.transform.position +
+                                  stateManager.CarGameObject.transform.right * stateManager.ExitCarOffset.x;
+            stateManager.PlayerCharacter.transform.position = exitPosition;
 
             // Enable player character
-            if (playerCharacter != null)
+            stateManager.PlayerCharacter.SetActive(true);
+            characterController.enabled = true;
+
+            // Disable car
+            stateManager.CarGameObject.SetActive(false);
+
+            // Update camera
+            if (stateManager.FollowCamera != null)
             {
-                playerCharacter.SetActive(true);
+                stateManager.FollowCamera.SetTarget(stateManager.PlayerCharacter.transform);
+                stateManager.FollowCamera.SetOffset(stateManager.WalkingCameraOffset);
             }
 
-            // Setup camera for walking
-            if (camera != null)
-            {
-                camera.SetTarget(playerCharacter.transform);
-                camera.SetOffset(stateManager.WalkingCameraOffset);
-            }
-
-            // Reset vertical velocity
-            verticalVelocity = Vector3.zero;
+            Debug.Log("[OnFootState] Player exited car - walking mode active");
         }
 
         public override void Update()
         {
             HandleMovement();
-            HandleInteractionInput();
+            CheckCarProximity();
+            HandleCarInteraction();
         }
 
-        public override void Exit()
-        {
-            Debug.Log("Exited OnFoot State");
-        }
-
-        /// <summary>
-        /// Handles WASD movement
-        /// </summary>
         private void HandleMovement()
         {
-            if (characterController == null)
-                return;
-
             // Get input
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
 
-            // Create movement direction
+            // Movement direction (relative to camera)
             Vector3 moveDirection = new Vector3(horizontal, 0f, vertical).normalized;
 
-            if (moveDirection.magnitude > 0.1f)
+            if (moveDirection.magnitude >= 0.1f)
             {
-                // Calculate movement relative to camera (optional - currently world-relative)
-                Vector3 move = moveDirection * moveSpeed * Time.deltaTime;
-
                 // Rotate player to face movement direction
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-                playerCharacter.transform.rotation = Quaternion.Slerp(
-                    playerCharacter.transform.rotation,
-                    targetRotation,
-                    turnSpeed * Time.deltaTime
-                );
+                stateManager.PlayerCharacter.transform.rotation =
+                    Quaternion.Slerp(stateManager.PlayerCharacter.transform.rotation,
+                                    targetRotation,
+                                    turnSpeed * Time.deltaTime);
 
-                // Apply horizontal movement
-                characterController.Move(move);
+                // Move player
+                characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
             }
 
             // Apply gravity
-            if (characterController.isGrounded)
-            {
-                verticalVelocity.y = -2f; // Small downward force to stay grounded
-            }
-            else
-            {
-                verticalVelocity.y += gravity * Time.deltaTime;
-            }
+            velocity.y += gravity * Time.deltaTime;
+            characterController.Move(velocity * Time.deltaTime);
 
-            characterController.Move(verticalVelocity * Time.deltaTime);
+            // Reset vertical velocity if grounded
+            if (characterController.isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f; // Small negative value to keep grounded
+            }
         }
 
-        /// <summary>
-        /// Handles E key for interaction
-        /// </summary>
-        private void HandleInteractionInput()
+        private void CheckCarProximity()
         {
-            if (!Input.GetKeyDown(KeyCode.E))
-                return;
-
-            // Priority 1: Check if near car
             float distanceToCar = Vector3.Distance(
-                playerCharacter.transform.position,
-                carGameObject.transform.position
+                stateManager.PlayerCharacter.transform.position,
+                stateManager.CarGameObject.transform.position
             );
 
-            if (distanceToCar <= interactionRange)
-            {
-                EnterCar();
-                return;
-            }
+            bool wasNearCar = isNearCar;
+            isNearCar = distanceToCar <= carInteractionRange;
 
-            // Priority 2: Interact with closest interactable object
-            if (interactionDetector != null && interactionDetector.HasInteractable)
+            // Show/hide interaction prompt
+            if (isNearCar && !wasNearCar)
             {
-                interactionDetector.InteractWithClosest();
-                return;
+                ShowCarInteractionPrompt();
             }
-
-            // No interactable nearby
-            Debug.Log("Nothing to interact with nearby");
+            else if (!isNearCar && wasNearCar)
+            {
+                HideCarInteractionPrompt();
+            }
         }
 
-        /// <summary>
-        /// Handles entering the car
-        /// </summary>
-        private void EnterCar()
+        private void HandleCarInteraction()
         {
-            Debug.Log("Entering car...");
-            stateManager.TransitionToDriving();
+            // Press E to enter car
+            if (isNearCar && Input.GetKeyDown(KeyCode.E))
+            {
+                HideCarInteractionPrompt();
+                stateManager.SwitchToDriving();
+            }
+        }
+
+        private void ShowCarInteractionPrompt()
+        {
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.ShowPrompt("Press E to Enter Car");
+            }
+        }
+
+        private void HideCarInteractionPrompt()
+        {
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.HidePrompt();
+            }
+        }
+
+        public override void Exit()
+        {
+            // Hide prompt when exiting state
+            HideCarInteractionPrompt();
+
+            // Disable player character
+            characterController.enabled = false;
+            stateManager.PlayerCharacter.SetActive(false);
+
+            Debug.Log("[OnFootState] Player entered car - switching to driving mode");
         }
     }
 }

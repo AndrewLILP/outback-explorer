@@ -1,6 +1,7 @@
 // PlayerInteractionDetector.cs
 using UnityEngine;
 using System.Collections.Generic;
+using RelaxingDrive.World;
 
 namespace RelaxingDrive.World
 {
