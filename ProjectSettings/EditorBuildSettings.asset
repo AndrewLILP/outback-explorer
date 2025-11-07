@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Pup Up Productions/Rural Australia Pack/Demo/Demo Scene.unity
     guid: d4006bb7f26cf404a8b438149092da20
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/TestWorld.unity
     guid: 52daa7ff4e381714aab645af31001083
+  - enabled: 1
+    path: Assets/Scenes/TestWorld2.unity
+    guid: 42a8447b875a7c04899ee527cd73b229
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
