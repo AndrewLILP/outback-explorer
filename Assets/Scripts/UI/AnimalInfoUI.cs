@@ -1,6 +1,6 @@
 ﻿// AnimalInfoUI.cs
 // UI Controller that displays animal information when player is nearby
-// Subscribes to AnimalDiscoveryManager events and triggers fade animations
+// Receives direct notifications from AnimalController
 
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,8 +10,8 @@ namespace RelaxingDrive.UI
 {
     /// <summary>
     /// Controls the Animal Info Panel UI.
-    /// Subscribes to discovery events and updates UI with animal data.
-    /// Handles fade in/out animations when player enters/exits range.
+    /// Displays animal information when notified by AnimalController.
+    /// Handles fade in/out animations.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class AnimalInfoUI : MonoBehaviour
@@ -19,17 +19,6 @@ namespace RelaxingDrive.UI
         [Header("UI References")]
         [Tooltip("StyleSheet containing animations and styling")]
         [SerializeField] private StyleSheet animalInfoStyleSheet;
-
-        [Header("Fade Settings")]
-        [Tooltip("Duration of fade in/out animation")]
-        [SerializeField] private float fadeDuration = 0.5f;
-
-        [Header("Player Tracking")]
-        [Tooltip("Player GameObject to track proximity")]
-        [SerializeField] private Transform playerTransform;
-
-        [Tooltip("Update interval for proximity checks")]
-        [SerializeField] private float proximityCheckInterval = 0.5f;
 
         [Header("Debug")]
         [SerializeField] private bool showDebugMessages = true;
@@ -52,8 +41,6 @@ namespace RelaxingDrive.UI
         // State tracking
         private AnimalData currentAnimal;
         private bool isPanelVisible = false;
-        private Vector3 currentAnimalPosition;
-        private bool isTrackingAnimal = false;
 
         private void Awake()
         {
@@ -64,16 +51,6 @@ namespace RelaxingDrive.UI
                 Debug.LogError("AnimalInfoUI: UIDocument component not found!", this);
                 enabled = false;
                 return;
-            }
-
-            // Find player if not assigned
-            if (playerTransform == null)
-            {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    playerTransform = player.transform;
-                }
             }
         }
 
@@ -114,75 +91,53 @@ namespace RelaxingDrive.UI
             // Start hidden
             HidePanel();
 
-            // Subscribe to discovery events
-            if (AnimalDiscoveryManager.Instance != null)
-            {
-                AnimalDiscoveryManager.Instance.OnAnimalDiscovered += OnAnimalDiscovered;
-                Debug.Log("AnimalInfoUI: Subscribed to AnimalDiscoveryManager events");
-            }
-            else
-            {
-                Debug.LogWarning("AnimalInfoUI: AnimalDiscoveryManager not found!");
-            }
-
-            // Start proximity checking
-            InvokeRepeating(nameof(CheckPlayerProximity), 1f, proximityCheckInterval);
-        }
-
-        private void OnDisable()
-        {
-            // Unsubscribe from events
-            if (AnimalDiscoveryManager.Instance != null)
-            {
-                AnimalDiscoveryManager.Instance.OnAnimalDiscovered -= OnAnimalDiscovered;
-            }
-
-            // Stop proximity checking
-            CancelInvoke(nameof(CheckPlayerProximity));
+            Debug.Log("AnimalInfoUI: Initialized successfully");
         }
 
         /// <summary>
-        /// Called when an animal is discovered (first time or repeat).
-        /// This is triggered BY AnimalController when player enters range.
+        /// Called by AnimalController when player enters animal's range.
+        /// Shows the panel with animal information.
         /// </summary>
-        private void OnAnimalDiscovered(AnimalData animalData, bool isFirstTime)
+        public void SetCurrentAnimal(AnimalData animalData, Vector3 animalPosition)
         {
-            if (animalData == null) return;
+            if (animalData == null)
+            {
+                Debug.LogWarning("AnimalInfoUI: SetCurrentAnimal called with null data!");
+                return;
+            }
 
             currentAnimal = animalData;
 
-            // Find the animal's position in world (for proximity tracking)
-            FindAnimalPosition(animalData);
+            // Check if this is first time discovering this animal
+            bool isFirstTime = !AnimalDiscoveryManager.Instance.HasDiscovered(animalData);
 
             // Update UI content
             UpdateAnimalInfo(animalData, isFirstTime);
 
-            // Show panel with fade in
+            // Show panel
             ShowPanel();
-            isTrackingAnimal = true;
 
             if (showDebugMessages)
             {
-                Debug.Log($"AnimalInfoUI: Displaying info for {animalData.AnimalName} (First time: {isFirstTime})");
+                Debug.Log($"AnimalInfoUI: Now showing {animalData.AnimalName} (First time: {isFirstTime})");
             }
         }
 
         /// <summary>
-        /// Finds the world position of the animal being displayed.
+        /// Called by AnimalController when player exits animal's range.
+        /// Hides the panel.
         /// </summary>
-        private void FindAnimalPosition(AnimalData animalData)
+        public void OnAnimalRangeExit(AnimalData animalData)
         {
-            // Find all AnimalControllers in scene
-            AnimalController[] controllers = FindObjectsByType<AnimalController>(FindObjectsSortMode.None);
-
-            foreach (AnimalController controller in controllers)
+            // Only hide if this is the animal we're currently displaying
+            if (currentAnimal != null && currentAnimal.AnimalName == animalData.AnimalName)
             {
-                // Check if this controller has the same AnimalData
-                // Note: We can't directly compare, so we'll use name matching
-                if (controller.gameObject.name.Contains(animalData.AnimalName))
+                HidePanel();
+                currentAnimal = null;
+
+                if (showDebugMessages)
                 {
-                    currentAnimalPosition = controller.transform.position;
-                    return;
+                    Debug.Log($"AnimalInfoUI: Hiding panel (player left {animalData.AnimalName})");
                 }
             }
         }
@@ -223,12 +178,17 @@ namespace RelaxingDrive.UI
                 discoveryBadge.RemoveFromClassList("discovery-badge--hidden");
                 discoveryBadge.AddToClassList("discovery-badge--already");
             }
+
+            if (showDebugMessages)
+            {
+                Debug.Log($"AnimalInfoUI: Updated info for {animalData.AnimalName}");
+            }
         }
 
         /// <summary>
         /// Shows the panel with fade in animation.
         /// </summary>
-        public void ShowPanel()
+        private void ShowPanel()
         {
             if (isPanelVisible) return;
 
@@ -245,14 +205,13 @@ namespace RelaxingDrive.UI
         /// <summary>
         /// Hides the panel with fade out animation.
         /// </summary>
-        public void HidePanel()
+        private void HidePanel()
         {
             if (!isPanelVisible) return;
 
             rootPanel.RemoveFromClassList("animal-panel--visible");
             rootPanel.AddToClassList("animal-panel--hidden");
             isPanelVisible = false;
-            isTrackingAnimal = false;
 
             if (showDebugMessages)
             {
@@ -261,27 +220,7 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Checks if player is still in range of current animal.
-        /// Called periodically via InvokeRepeating.
-        /// </summary>
-        private void CheckPlayerProximity()
-        {
-            if (!isTrackingAnimal || currentAnimal == null || playerTransform == null) return;
-
-            float distance = Vector3.Distance(
-                playerTransform.position,
-                currentAnimalPosition
-            );
-
-            // Hide panel if player moved too far away (with 20% buffer to prevent flicker)
-            if (distance > currentAnimal.DiscoveryRange * 1.2f)
-            {
-                HidePanel();
-            }
-        }
-
-        /// <summary>
-        /// Manual method to show specific animal info (for testing).
+        /// Manual method to toggle panel (for testing).
         /// </summary>
         [ContextMenu("Test Panel Visibility")]
         public void TestPanelVisibility()
@@ -294,11 +233,6 @@ namespace RelaxingDrive.UI
             {
                 ShowPanel();
             }
-        }
-
-        private void OnDestroy()
-        {
-            CancelInvoke(nameof(CheckPlayerProximity));
         }
     }
 }

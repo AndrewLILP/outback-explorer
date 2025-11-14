@@ -3,6 +3,7 @@
 // Attached to each animal GameObject in the scene
 
 using UnityEngine;
+using RelaxingDrive.UI;
 
 namespace RelaxingDrive.Animals
 {
@@ -30,9 +31,14 @@ namespace RelaxingDrive.Animals
 
         [SerializeField] private Color gizmoColor = new Color(0.3f, 1f, 0.3f, 0.3f);
 
+        [Header("Debug")]
+        [SerializeField] private bool showDebugMessages = true;
+
         // Internal state
         private Transform playerTransform;
         private bool hasBeenDiscovered = false;
+        private bool playerInRange = false;
+        private AnimalInfoUI animalInfoUI;
 
         private void Start()
         {
@@ -46,6 +52,20 @@ namespace RelaxingDrive.Animals
 
             // Find player
             FindPlayer();
+
+            // Find AnimalInfoUI
+            animalInfoUI = FindFirstObjectByType<AnimalInfoUI>();
+            if (animalInfoUI == null)
+            {
+                Debug.LogError($"AnimalController ({animalData.AnimalName}): Could not find AnimalInfoUI in scene! UI will not work!");
+            }
+            else
+            {
+                if (showDebugMessages)
+                {
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found AnimalInfoUI successfully");
+                }
+            }
 
             // Start proximity detection loop
             InvokeRepeating(nameof(CheckPlayerProximity), 0.5f, detectionInterval);
@@ -63,7 +83,10 @@ namespace RelaxingDrive.Animals
             if (player != null)
             {
                 playerTransform = player.transform;
-                Debug.Log($"AnimalController ({animalData.AnimalName}): Found player at {player.name}");
+                if (showDebugMessages)
+                {
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found player at {player.name}");
+                }
             }
             else
             {
@@ -87,10 +110,37 @@ namespace RelaxingDrive.Animals
             // Calculate distance to player
             float distance = Vector3.Distance(transform.position, playerTransform.position);
 
-            // Check if player is within discovery range
+            // Check if player entered range
             if (distance <= animalData.DiscoveryRange)
             {
-                TriggerDiscovery();
+                if (!playerInRange)
+                {
+                    // Player just entered range
+                    playerInRange = true;
+
+                    if (showDebugMessages)
+                    {
+                        Debug.Log($"AnimalController ({animalData.AnimalName}): Player entered range (distance: {distance:F1}m)");
+                    }
+
+                    TriggerDiscovery();
+                }
+            }
+            else
+            {
+                // Check if player left range (with buffer to prevent flicker)
+                if (playerInRange && distance > animalData.DiscoveryRange * 1.2f)
+                {
+                    // Player left range
+                    playerInRange = false;
+
+                    if (showDebugMessages)
+                    {
+                        Debug.Log($"AnimalController ({animalData.AnimalName}): Player left range (distance: {distance:F1}m)");
+                    }
+
+                    NotifyPlayerLeftRange();
+                }
             }
         }
 
@@ -113,6 +163,37 @@ namespace RelaxingDrive.Animals
             {
                 hasBeenDiscovered = true;
                 OnFirstDiscovery();
+            }
+
+            // Notify UI to show this animal
+            if (animalInfoUI != null)
+            {
+                if (showDebugMessages)
+                {
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Calling UI.SetCurrentAnimal()");
+                }
+
+                animalInfoUI.SetCurrentAnimal(animalData, transform.position);
+            }
+            else
+            {
+                Debug.LogWarning($"AnimalController ({animalData.AnimalName}): animalInfoUI is null, cannot show UI!");
+            }
+        }
+
+        /// <summary>
+        /// Notifies UI that player left this animal's range.
+        /// </summary>
+        private void NotifyPlayerLeftRange()
+        {
+            if (animalInfoUI != null)
+            {
+                if (showDebugMessages)
+                {
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Calling UI.OnAnimalRangeExit()");
+                }
+
+                animalInfoUI.OnAnimalRangeExit(animalData);
             }
         }
 
@@ -180,6 +261,7 @@ namespace RelaxingDrive.Animals
         {
             if (animalData != null)
             {
+                playerInRange = true;
                 TriggerDiscovery();
             }
             else
