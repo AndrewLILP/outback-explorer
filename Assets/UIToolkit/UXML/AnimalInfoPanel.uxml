@@ -1,0 +1,66 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" 
+         xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         engine="UnityEngine.UIElements" 
+         editor="UnityEditor.UIElements" 
+         noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" 
+         editor-extension-mode="False">
+    
+    <!-- Root Container - Controls fade in/out -->
+    <ui:VisualElement name="animal-info-root" class="animal-panel">
+        
+        <!-- Main Panel Container -->
+        <ui:VisualElement name="animal-info-container" class="animal-panel-container">
+            
+            <!-- Header Section: Icon + Name -->
+            <ui:VisualElement name="header-section" class="header-section">
+                
+                <!-- Animal Icon -->
+                <ui:VisualElement name="animal-icon" class="animal-icon" />
+                
+                <!-- Name Container -->
+                <ui:VisualElement name="name-container" class="name-container">
+                    <!-- Animal Common Name -->
+                    <ui:Label name="animal-name" text="Animal Name" class="animal-name-label" />
+                    
+                    <!-- Scientific Name -->
+                    <ui:Label name="scientific-name" text="Scientific Name" class="scientific-name-label" />
+                </ui:VisualElement>
+                
+            </ui:VisualElement>
+            
+            <!-- Divider Line -->
+            <ui:VisualElement name="divider" class="divider" />
+            
+            <!-- Info Section -->
+            <ui:VisualElement name="info-section" class="info-section">
+                
+                <!-- Habitat -->
+                <ui:VisualElement name="habitat-container" class="info-row">
+                    <ui:Label name="habitat-label" text="📍 Habitat:" class="info-label" />
+                    <ui:Label name="habitat-value" text="Habitat description" class="info-value" />
+                </ui:VisualElement>
+                
+                <!-- Diet -->
+                <ui:VisualElement name="diet-container" class="info-row">
+                    <ui:Label name="diet-label" text="🍃 Diet:" class="info-label" />
+                    <ui:Label name="diet-value" text="Diet description" class="info-value" />
+                </ui:VisualElement>
+                
+            </ui:VisualElement>
+            
+            <!-- Fun Fact Section -->
+            <ui:VisualElement name="fun-fact-section" class="fun-fact-section">
+                <ui:Label name="fun-fact-label" text="💡 Fun Fact:" class="fun-fact-label" />
+                <ui:Label name="fun-fact-value" text="Fun fact about the animal goes here!" class="fun-fact-value" />
+            </ui:VisualElement>
+            
+            <!-- Discovery Badge -->
+            <ui:VisualElement name="discovery-badge" class="discovery-badge">
+                <ui:Label name="discovery-text" text="🆕 Discovered!" class="discovery-badge-text" />
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+        
+    </ui:VisualElement>
+    
+</ui:UXML>

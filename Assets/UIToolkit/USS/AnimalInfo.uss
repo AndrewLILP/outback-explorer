@@ -1,0 +1,263 @@
+/* AnimalInfo.uss - COMPACT VERSION */
+/* Stylesheet for Animal Info Panel - Australian outback theme */
+/* Optimized for 16:9 aspect ratio with compact sizing */
+
+/* ============================================================================
+   ROOT CONTAINER - FADE CONTROL
+   ============================================================================ */
+
+.animal-panel {
+    position: absolute;
+    left: 20px;
+    bottom: 80px;
+    width: 280px; /* Reduced from 400px */
+    
+    /* Smooth fade transitions */
+    transition-property: opacity;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-in-out;
+}
+
+/* Hidden state */
+.animal-panel--hidden {
+    opacity: 0;
+    display: none;
+}
+
+/* Visible state */
+.animal-panel--visible {
+    opacity: 1;
+    display: flex;
+}
+
+/* ============================================================================
+   MAIN PANEL CONTAINER
+   ============================================================================ */
+
+.animal-panel-container {
+    background-color: rgba(40, 30, 20, 0.92);
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: rgba(139, 90, 43, 0.8);
+    padding: 12px; /* Reduced from 20px */
+    
+    /* Drop shadow for depth */
+    -unity-background-image-tint-color: rgb(40, 30, 20);
+}
+
+/* ============================================================================
+   HEADER SECTION
+   ============================================================================ */
+
+.header-section {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px; /* Reduced from 15px */
+}
+
+/* Animal Icon - Smaller */
+.animal-icon {
+    width: 60px; /* Reduced from 80px */
+    height: 60px;
+    margin-right: 10px; /* Reduced from 15px */
+    background-color: rgba(139, 90, 43, 0.3);
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgba(139, 90, 43, 0.6);
+    
+    /* Icon will be set via code as background-image */
+}
+
+/* Name Container */
+.name-container {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+/* Animal Name - Smaller */
+.animal-name-label {
+    font-size: 22px; /* Reduced from 28px */
+    -unity-font-style: bold;
+    color: rgb(255, 220, 150);
+    margin-bottom: 3px; /* Reduced from 5px */
+    -unity-text-align: upper-left;
+}
+
+/* Scientific Name - Smaller */
+.scientific-name-label {
+    font-size: 13px; /* Reduced from 16px */
+    -unity-font-style: italic;
+    color: rgba(200, 180, 140, 0.9);
+    -unity-text-align: upper-left;
+}
+
+/* ============================================================================
+   DIVIDER
+   ============================================================================ */
+
+.divider {
+    height: 1px; /* Reduced from 2px */
+    background-color: rgba(139, 90, 43, 0.5);
+    margin-top: 8px; /* Reduced from 10px */
+    margin-bottom: 10px; /* Reduced from 15px */
+}
+
+/* ============================================================================
+   INFO SECTION
+   ============================================================================ */
+
+.info-section {
+    flex-direction: column;
+    margin-bottom: 10px; /* Reduced from 15px */
+}
+
+.info-row {
+    flex-direction: column;
+    margin-bottom: 8px; /* Reduced from 10px */
+}
+
+/* Info Labels (Habitat:, Diet:) - Smaller */
+.info-label {
+    font-size: 12px; /* Reduced from 14px */
+    -unity-font-style: bold;
+    color: rgb(220, 180, 120);
+    margin-bottom: 2px; /* Reduced from 3px */
+}
+
+/* Info Values - Smaller */
+.info-value {
+    font-size: 12px; /* Reduced from 14px */
+    color: rgb(230, 220, 200);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* ============================================================================
+   FUN FACT SECTION
+   ============================================================================ */
+
+.fun-fact-section {
+    background-color: rgba(139, 90, 43, 0.25);
+    border-radius: 6px; /* Reduced from 8px */
+    padding: 10px; /* Reduced from 12px */
+    margin-bottom: 10px; /* Reduced from 15px */
+    border-width: 1px;
+    border-color: rgba(139, 90, 43, 0.5);
+}
+
+.fun-fact-label {
+    font-size: 13px; /* Reduced from 15px */
+    -unity-font-style: bold;
+    color: rgb(255, 200, 100);
+    margin-bottom: 4px; /* Reduced from 5px */
+}
+
+.fun-fact-value {
+    font-size: 12px; /* Reduced from 14px */
+    color: rgb(240, 230, 210);
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+/* ============================================================================
+   DISCOVERY BADGE
+   ============================================================================ */
+
+.discovery-badge {
+    background-color: rgba(50, 200, 50, 0.3);
+    border-radius: 5px; /* Reduced from 6px */
+    padding: 6px; /* Reduced from 8px */
+    align-items: center;
+    justify-content: center;
+    border-width: 2px;
+    border-color: rgba(50, 200, 50, 0.6);
+    
+    /* Smooth visibility transition */
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+/* Hidden badge for already-discovered animals */
+.discovery-badge--hidden {
+    display: none;
+}
+
+.discovery-badge-text {
+    font-size: 13px; /* Reduced from 16px */
+    -unity-font-style: bold;
+    color: rgb(150, 255, 150);
+    -unity-text-align: middle-center;
+}
+
+/* Alternative badge for already discovered (yellow) */
+.discovery-badge--already {
+    background-color: rgba(200, 150, 50, 0.3);
+    border-color: rgba(200, 150, 50, 0.6);
+}
+
+.discovery-badge--already .discovery-badge-text {
+    color: rgb(255, 220, 100);
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+/* For ultra-wide screens (21:9) - make it even smaller */
+@media (min-width: 2560px) {
+    .animal-panel {
+        width: 260px;
+    }
+}
+
+/* For 4:3 aspect ratio - slightly wider */
+@media (max-aspect-ratio: 4/3) {
+    .animal-panel {
+        width: 300px;
+    }
+}
+
+/* ============================================================================
+   HOVER EFFECTS (Optional Polish)
+   ============================================================================ */
+
+.animal-panel-container:hover {
+    border-color: rgba(139, 90, 43, 1.0);
+    /* Slightly brighten on hover */
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Force hide (overrides everything) */
+.force-hidden {
+    display: none !important;
+}
+
+/* Force show */
+.force-visible {
+    display: flex !important;
+    opacity: 1 !important;
+}
+
+/* ============================================================================
+   OPTIONAL: ALTERNATIVE POSITIONING
+   ============================================================================ */
+
+/* If you want it in bottom-right instead */
+.animal-panel--right {
+    left: auto;
+    right: 20px;
+}
+
+/* If you want it higher up */
+.animal-panel--higher {
+    bottom: 150px;
+}
+
+/* If you want it centered-left */
+.animal-panel--center {
+    bottom: 50%;
+    transform: translateY(50%);
+}
