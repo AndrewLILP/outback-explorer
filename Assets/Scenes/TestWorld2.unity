@@ -1313,19 +1313,19 @@ PrefabInstance:
       objectReference: {fileID: -3824078280368627652, guid: a1440eddd85e9944982097d6374feb68, type: 3}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 337.5
+      value: 376.493
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 31.95
+      value: 34.976
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -243.96
+      value: -357.52
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.17364809
+      value: 0.9990483
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalRotation.x
@@ -1333,11 +1333,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.9848078
+      value: 0.043619405
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1345,7 +1345,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 200
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -7006,6 +7006,7 @@ MonoBehaviour:
   detectionInterval: 0.5
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
+  showDebugMessages: 1
 --- !u!4 &684772026 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6487094212593311441, guid: 6eaf0187664ac4c42b0dc44b670e16ca, type: 3}
@@ -8965,6 +8966,7 @@ MonoBehaviour:
   detectionInterval: 0.5
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
+  showDebugMessages: 1
 --- !u!4 &823268441 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6361410746257076766, guid: beacb33337884964db1890236a161900, type: 3}
@@ -11138,7 +11140,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 367.7
+      value: 373.11
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.y
@@ -12342,7 +12344,7 @@ BoxCollider:
     m_Bits: 0
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
+  m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
@@ -12370,7 +12372,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: b3523ae9abe4f78479d237b915c30038, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -17461,6 +17463,7 @@ MonoBehaviour:
   detectionInterval: 0.5
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
+  showDebugMessages: 1
 --- !u!4 &1418532927 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8677912055824958153, guid: 9f0d2e990969c7745abe7af384aa4977, type: 3}
@@ -23020,6 +23023,7 @@ MonoBehaviour:
   detectionInterval: 0.5
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
+  showDebugMessages: 1
 --- !u!1001 &1800873489
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23522,9 +23526,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalInfoStyleSheet: {fileID: 7433441132597879392, guid: ed239d77e4b41414d94475a9f67d80ce, type: 3}
-  fadeDuration: 0.5
-  playerTransform: {fileID: 1481510938}
-  proximityCheckInterval: 0.5
   showDebugMessages: 1
 --- !u!114 &1825627304
 MonoBehaviour:
