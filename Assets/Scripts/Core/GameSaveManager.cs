@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using RelaxingDrive.Animals; // For AnimalDiscoveryManager
+using RelaxingDrive.World; // For ActivatableObject
 
 namespace RelaxingDrive.Core
 {
@@ -75,6 +76,9 @@ namespace RelaxingDrive.Core
         private string saveFilePath;
         private Coroutine autoSaveCoroutine;
         private bool isInitialized = false;
+
+        // Runtime tracking of activated buildings
+        private HashSet<string> activatedBuildingsRuntime = new HashSet<string>();
 
         #endregion
 
@@ -311,16 +315,9 @@ namespace RelaxingDrive.Core
                 Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
             }
 
-            // TODO: Task 6 - Collect AnimalDiscoveryManager data
-            // if (AnimalDiscoveryManager.Instance != null)
-            // {
-            //     // Will implement in Task 6
-            //     Debug.Log("[GameSaveManager] AnimalDiscoveryManager integration pending (Task 6)");
-            // }
-
-            // TODO: Task 7 - Collect ActivatableObject data
-            // Will implement in Task 7
-            Debug.Log("[GameSaveManager] Building activation integration pending (Task 7)");
+            // Collect building activation data
+            saveData.activatedBuildingIDs = new List<string>(activatedBuildingsRuntime);
+            Debug.Log($"[GameSaveManager] Saved {saveData.activatedBuildingIDs.Count} activated buildings");
         }
 
         /// <summary>
@@ -352,16 +349,10 @@ namespace RelaxingDrive.Core
                 Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
             }
 
-            // TODO: Task 6 - Apply AnimalDiscoveryManager data
-            // if (AnimalDiscoveryManager.Instance != null)
-            // {
-            //     // Will implement in Task 6
-            //     Debug.Log("[GameSaveManager] AnimalDiscoveryManager integration pending (Task 6)");
-            // }
-
-            // TODO: Task 7 - Apply ActivatableObject data
-            // Will implement in Task 7
-            Debug.Log("[GameSaveManager] Building activation integration pending (Task 7)");
+            // Apply building activation data
+            activatedBuildingsRuntime = new HashSet<string>(saveData.activatedBuildingIDs);
+            ActivateSavedBuildings(saveData.activatedBuildingIDs);
+            Debug.Log($"[GameSaveManager] Loaded {saveData.activatedBuildingIDs.Count} activated buildings");
         }
 
         #endregion
@@ -441,6 +432,58 @@ namespace RelaxingDrive.Core
 
             FileInfo fileInfo = new FileInfo(saveFilePath);
             return $"Last saved: {fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss} ({fileInfo.Length} bytes)";
+        }
+
+        #endregion
+
+        #region Building Activation Helpers
+
+        /// <summary>
+        /// Called by ActivatableObject when it becomes active.
+        /// Registers the building so it persists in save data.
+        /// </summary>
+        public void RegisterActivatedBuilding(string buildingID)
+        {
+            if (string.IsNullOrEmpty(buildingID))
+            {
+                Debug.LogWarning("[GameSaveManager] Attempted to register building with empty ID");
+                return;
+            }
+
+            if (!activatedBuildingsRuntime.Contains(buildingID))
+            {
+                activatedBuildingsRuntime.Add(buildingID);
+                Debug.Log($"[GameSaveManager] Registered activated building: {buildingID}");
+            }
+        }
+
+        /// <summary>
+        /// Finds all ActivatableObjects in scene and activates the ones from save data.
+        /// Called during load process.
+        /// </summary>
+        private void ActivateSavedBuildings(List<string> savedBuildingIDs)
+        {
+            if (savedBuildingIDs == null || savedBuildingIDs.Count == 0)
+            {
+                Debug.Log("[GameSaveManager] No saved buildings to activate");
+                return;
+            }
+
+            // Find all ActivatableObjects in scene
+            ActivatableObject[] allBuildings = FindObjectsByType<ActivatableObject>(FindObjectsSortMode.None);
+
+            int activatedCount = 0;
+
+            foreach (var building in allBuildings)
+            {
+                if (savedBuildingIDs.Contains(building.BuildingID))
+                {
+                    building.ActivateFromSave();
+                    activatedCount++;
+                }
+            }
+
+            Debug.Log($"[GameSaveManager] Activated {activatedCount}/{savedBuildingIDs.Count} saved buildings");
         }
 
         #endregion

@@ -9,9 +9,15 @@ namespace RelaxingDrive.World
     /// Makes a GameObject activate when a zone reaches a specific visit threshold.
     /// Uses Observer Pattern - subscribes to VisitManager events.
     /// Attach this to any building, NPC, or object that should appear based on visits.
+    /// 
+    /// SAVE/LOAD: Each building needs a unique ID for save persistence.
     /// </summary>
     public class ActivatableObject : MonoBehaviour, IActivatable
     {
+        [Header("Save/Load")]
+        [Tooltip("Unique ID for this building (must be unique in scene!)")]
+        [SerializeField] private string buildingID = "";
+
         [Header("Activation Settings")]
         [Tooltip("The zone ID that triggers this activation")]
         [SerializeField] private string targetZoneID;
@@ -42,6 +48,7 @@ namespace RelaxingDrive.World
         private Collider[] colliders;
 
         public bool IsActive => isActive;
+        public string BuildingID => buildingID;
 
         /// <summary>
         /// Defines how the object appears when activated.
@@ -62,6 +69,12 @@ namespace RelaxingDrive.World
 
             // Start disabled
             SetObjectVisibility(false);
+
+            // Validate building ID
+            if (string.IsNullOrEmpty(buildingID))
+            {
+                Debug.LogWarning($"{gameObject.name} has no Building ID! Save/load will not work for this object.");
+            }
         }
 
         private void OnEnable()
@@ -99,7 +112,7 @@ namespace RelaxingDrive.World
         {
             if (showDebugMessages)
             {
-                Debug.Log($"{gameObject.name} - Target Zone: '{targetZoneID}', Required Visits: {requiredVisits}, Type: {activationType}");
+                Debug.Log($"{gameObject.name} (ID: {buildingID}) - Target Zone: '{targetZoneID}', Required Visits: {requiredVisits}, Type: {activationType}");
             }
 
             // Check if already activated (in case game was saved/loaded)
@@ -110,9 +123,10 @@ namespace RelaxingDrive.World
                 if (showDebugMessages)
                     Debug.Log($"{gameObject.name} - Current visits for '{targetZoneID}': {currentVisits}");
 
-                if (currentVisits >= requiredVisits)
+                if (currentVisits >= requiredVisits && !isActive)
                 {
                     // Already should be active - activate instantly
+                    // This handles cases where visit count was loaded from save
                     ActivateInstant();
                 }
             }
@@ -166,6 +180,25 @@ namespace RelaxingDrive.World
                     StartCoroutine(FadeAndScaleCoroutine());
                     break;
             }
+
+            // Notify save manager that this building is now active
+            NotifySaveManager();
+        }
+
+        /// <summary>
+        /// Activates the object instantly when loading from save.
+        /// Skips animations for immediate activation.
+        /// Called by GameSaveManager during load.
+        /// </summary>
+        public void ActivateFromSave()
+        {
+            if (isActive)
+                return;
+
+            ActivateInstant();
+
+            if (showDebugMessages)
+                Debug.Log($"{gameObject.name} activated from save (instant)");
         }
 
         /// <summary>
@@ -198,6 +231,20 @@ namespace RelaxingDrive.World
 
             if (showDebugMessages)
                 Debug.Log($"{gameObject.name} activated instantly");
+        }
+
+        /// <summary>
+        /// Notifies GameSaveManager that this building has been activated.
+        /// </summary>
+        private void NotifySaveManager()
+        {
+            if (string.IsNullOrEmpty(buildingID))
+                return;
+
+            if (GameSaveManager.Instance != null)
+            {
+                GameSaveManager.Instance.RegisterActivatedBuilding(buildingID);
+            }
         }
 
         /// <summary>
