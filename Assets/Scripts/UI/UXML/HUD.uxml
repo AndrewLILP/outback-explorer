@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/USS/HUD.uss?fileID=7433441132597879392&amp;guid=9de7be3d74a294541a4674fc78d3da22&amp;type=3#HUD" />
+    <Style src="project://database/Assets/Scripts/UI/USS/HUD.uss?fileID=7433441132597879392&amp;guid=62f7dd346571de947be06addefd2eca8&amp;type=3#HUD" />
     <ui:VisualElement name="HUD" class="hud-container">
         <ui:VisualElement name="Speedometer" class="speedometer">
             <ui:Label name="SpeedLabel" text="0" class="speed-value" />
@@ -7,6 +7,29 @@
         </ui:VisualElement>
         <ui:VisualElement name="MissionIndicator" class="mission-indicator">
             <ui:Label name="MissionText" class="mission-text" />
+        </ui:VisualElement>
+        <ui:VisualElement name="DiscoveryProgressContainer" class="discovery-progress">
+            <ui:VisualElement name="AnimalIconsRow" class="icons-row">
+                <ui:VisualElement name="KangarooIcon" class="animal-icon">
+                    <ui:Label text="K" class="icon-initial" />
+                </ui:VisualElement>
+                <ui:VisualElement name="EmuIcon" class="animal-icon">
+                    <ui:Label text="E" class="icon-initial" />
+                </ui:VisualElement>
+                <ui:VisualElement name="EchidnaIcon" class="animal-icon">
+                    <ui:Label text="Ec" class="icon-initial" />
+                </ui:VisualElement>
+                <ui:VisualElement name="DevilIcon" class="animal-icon">
+                    <ui:Label text="TD" class="icon-initial" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="ProgressText" text="Discovered: 0/4 (0%)" class="progress-text" />
+            <ui:VisualElement name="AnimalList" class="animal-list">
+                <ui:Label name="KangarooLabel" text="❓ Kangaroo" class="animal-name undiscovered" />
+                <ui:Label name="EmuLabel" text="❓ Emu" class="animal-name undiscovered" />
+                <ui:Label name="EchidnaLabel" text="❓ Echidna" class="animal-name undiscovered" />
+                <ui:Label name="DevilLabel" text="❓ Tasmanian Devil" class="animal-name undiscovered" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

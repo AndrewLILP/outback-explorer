@@ -52,3 +52,103 @@
     font-size: 16px;
     color: rgb(255, 220, 150);
 }
+
+/* ===== DISCOVERY PROGRESS HUD (Top Right) ===== */
+
+.discovery-progress {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    background-color: rgba(20, 15, 10, 0.85);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: rgb(139, 69, 19); /* Brown earthy border */
+    padding: 12px;
+    min-width: 220px;
+}
+
+/* Animal Icons Row */
+.icons-row {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.animal-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 23px; /* Circular */
+    margin: 2px;
+    background-color: rgb(80, 80, 80); /* Dark grey placeholder */
+    opacity: 0.3; /* Greyed out by default */
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.2);
+    transition-property: opacity, transform;
+    transition-duration: 0.3s;
+}
+
+.animal-icon.discovered {
+    opacity: 1.0; /* Full color when discovered */
+}
+
+/* Individual Animal Icon Colors */
+.animal-icon.kangaroo {
+    background-color: rgb(139, 69, 19); /* Brown */
+}
+
+.animal-icon.emu {
+    background-color: rgb(74, 74, 74); /* Dark grey */
+}
+
+.animal-icon.echidna {
+    background-color: rgb(210, 180, 140); /* Sandy tan */
+}
+
+.animal-icon.devil {
+    background-color: rgb(26, 26, 26); /* Black */
+    border-color: rgba(255, 255, 255, 0.4); /* Brighter border for visibility */
+}
+
+/* Icon Initial Text (K, E, Ec, TD) */
+.icon-initial {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    align-self: center;
+    justify-content: center;
+    flex-grow: 1;
+    margin: auto;
+}
+
+/* Progress Text */
+.progress-text {
+    font-size: 14px;
+    color: rgb(210, 180, 140); /* Sandy tan */
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+}
+
+/* Animal List Container */
+.animal-list {
+    flex-direction: column;
+    margin-top: 4px;
+}
+
+/* Animal Name Labels */
+.animal-name {
+    font-size: 12px;
+    margin: 2px 0;
+    -unity-text-align: middle-left;
+    padding-left: 4px;
+}
+
+.animal-name.undiscovered {
+    color: rgb(100, 100, 100); /* Grey */
+}
+
+.animal-name.discovered {
+    color: rgb(144, 238, 144); /* Light green */
+    -unity-font-style: bold;
+}
