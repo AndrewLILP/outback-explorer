@@ -22,9 +22,17 @@ namespace RelaxingDrive.UI
         [SerializeField] private float speedMultiplier = 4f; // Same as car controller
         [SerializeField] private int totalAnimalSpecies = 4; // Total unique animals
 
+        // Animal speed constants (km/h)
+        private const float ECHIDNA_SPEED = 5f;
+        private const float DEVIL_SPEED = 13f;
+        private const float EMU_SPEED = 50f;
+        private const float KANGAROO_SPEED = 70f;
+
         // Speedometer UI Elements
         private Label speedLabel;
         private VisualElement speedometer;
+        private VisualElement animalSpeedTier;
+        private VisualElement speedIndicator;
 
         // Discovery Progress UI Elements
         private Label progressText;
@@ -61,6 +69,8 @@ namespace RelaxingDrive.UI
             // Query speedometer elements
             speedLabel = root.Q<Label>("SpeedLabel");
             speedometer = root.Q<VisualElement>("Speedometer");
+            animalSpeedTier = root.Q<VisualElement>("AnimalSpeedTier");
+            speedIndicator = root.Q<VisualElement>("SpeedIndicator");
 
             // Query discovery progress elements
             progressText = root.Q<Label>("ProgressText");
@@ -137,6 +147,81 @@ namespace RelaxingDrive.UI
             {
                 int roundedSpeed = (int)Mathf.Round(carRb.linearVelocity.magnitude * speedMultiplier);
                 speedLabel.text = $"{roundedSpeed}";
+
+                // Update animal speed tier (show only when moving)
+                UpdateAnimalSpeedTier(roundedSpeed);
+            }
+        }
+
+        /// <summary>
+        /// Updates the animal speed tier display and indicator position
+        /// </summary>
+        private void UpdateAnimalSpeedTier(int currentSpeed)
+        {
+            if (animalSpeedTier == null || speedIndicator == null)
+                return;
+
+            // Show/hide based on speed > 1
+            if (currentSpeed > 1)
+            {
+                // Show the tier
+                if (!animalSpeedTier.ClassListContains("visible"))
+                {
+                    animalSpeedTier.AddToClassList("visible");
+                }
+
+                // Calculate indicator position (0-100%)
+                float percentage = CalculateSpeedPercentage(currentSpeed);
+
+                // Update indicator position (CSS left property)
+                speedIndicator.style.left = new StyleLength(new Length(percentage, LengthUnit.Percent));
+            }
+            else
+            {
+                // Hide the tier when stopped
+                if (animalSpeedTier.ClassListContains("visible"))
+                {
+                    animalSpeedTier.RemoveFromClassList("visible");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculates the speed indicator position as a percentage (0-100%)
+        /// based on animal speed milestones
+        /// </summary>
+        private float CalculateSpeedPercentage(int speed)
+        {
+            // Map speed to position between animal markers
+            // Markers are evenly spaced: Echidna (0%), Devil (33%), Emu (66%), Kangaroo (100%)
+
+            if (speed <= ECHIDNA_SPEED)
+            {
+                // 0-5 km/h: Between start and Echidna (0-25%)
+                return Mathf.Lerp(0f, 25f, speed / ECHIDNA_SPEED);
+            }
+            else if (speed <= DEVIL_SPEED)
+            {
+                // 5-13 km/h: Between Echidna and Devil (25-50%)
+                float t = (speed - ECHIDNA_SPEED) / (DEVIL_SPEED - ECHIDNA_SPEED);
+                return Mathf.Lerp(25f, 50f, t);
+            }
+            else if (speed <= EMU_SPEED)
+            {
+                // 13-50 km/h: Between Devil and Emu (50-75%)
+                float t = (speed - DEVIL_SPEED) / (EMU_SPEED - DEVIL_SPEED);
+                return Mathf.Lerp(50f, 75f, t);
+            }
+            else if (speed <= KANGAROO_SPEED)
+            {
+                // 50-70 km/h: Between Emu and Kangaroo (75-100%)
+                float t = (speed - EMU_SPEED) / (KANGAROO_SPEED - EMU_SPEED);
+                return Mathf.Lerp(75f, 100f, t);
+            }
+            else
+            {
+                // Above Kangaroo speed: Stay at 100%
+                return 100f;
             }
         }
 

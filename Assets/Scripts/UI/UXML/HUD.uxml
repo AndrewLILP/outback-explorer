@@ -4,6 +4,18 @@
         <ui:VisualElement name="Speedometer" class="speedometer">
             <ui:Label name="SpeedLabel" text="0" class="speed-value" />
             <ui:Label text="km/h" class="speed-unit" />
+            <ui:VisualElement name="AnimalSpeedTier" class="animal-speed-tier">
+                <ui:VisualElement name="AnimalMarkersRow" class="animal-markers-row">
+                    <ui:Label text="Ec" class="animal-marker" />
+                    <ui:Label text="TD" class="animal-marker" />
+                    <ui:Label text="E" class="animal-marker" />
+                    <ui:Label text="K" class="animal-marker" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SpeedBarContainer" class="speed-bar-container">
+                    <ui:VisualElement name="SpeedBar" class="speed-bar" />
+                    <ui:VisualElement name="SpeedIndicator" class="speed-indicator" />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="MissionIndicator" class="mission-indicator">
             <ui:Label name="MissionText" class="mission-text" />

@@ -36,6 +36,66 @@
     margin-top: 5px;
 }
 
+/* Animal Speed Tier (Hidden by default, shown when speed > 1) */
+.animal-speed-tier {
+    margin-top: 12px;
+    width: 100%;
+    display: none; /* Hidden by default */
+}
+
+.animal-speed-tier.visible {
+    display: flex; /* Show when class added */
+}
+
+/* Animal Markers Row */
+.animal-markers-row {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.animal-marker {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    min-width: 20px;
+}
+
+/* Speed Bar Container */
+.speed-bar-container {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    margin-top: 2px;
+}
+
+/* Speed Bar (Background track) */
+.speed-bar {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(100, 200, 255, 0.3);
+    border-radius: 3px;
+}
+
+/* Speed Indicator (Moving dot) */
+.speed-indicator {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: rgb(100, 200, 255);
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+    top: -3px; /* Center vertically on bar */
+    left: 0%; /* Updated via code based on speed */
+    transition-property: left;
+    transition-duration: 0.2s;
+}
+
 /* Mission Indicator (Top Left) */
 .mission-indicator {
     position: absolute;
