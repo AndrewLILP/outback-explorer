@@ -63,7 +63,10 @@ namespace RelaxingDrive.Core
         [Tooltip("Enable auto-save (disable for testing)")]
         [SerializeField] private bool enableAutoSave = true;
 
-        [Tooltip("Enable debug save/load keys (F5/F6/F7)")]
+        [Tooltip("Load save file automatically on game start")]
+        [SerializeField] private bool loadOnStart = true;
+
+        [Tooltip("Enable debug save/load keys (F5/F6/F7/F8)")]
         [SerializeField] private bool enableDebugKeys = true;
 
         [Header("File Settings")]
@@ -112,9 +115,22 @@ namespace RelaxingDrive.Core
                 StartAutoSave();
             }
 
-            // Auto-load on start
-            Load();
+            // Auto-load on start (if enabled)
+            if (loadOnStart && SaveFileExists())
+            {
+                Load();
+                Debug.Log("[GameSaveManager] Auto-loaded save file on start");
+            }
+            else if (!SaveFileExists())
+            {
+                Debug.Log("[GameSaveManager] No save file found - starting fresh game");
+            }
+            else
+            {
+                Debug.Log("[GameSaveManager] Auto-load disabled - starting fresh game");
+            }
         }
+
 
         private void Update()
         {
@@ -153,8 +169,8 @@ namespace RelaxingDrive.Core
         private void OnApplicationQuit()
         {
             // Set flag BEFORE saving to prevent race conditions
-            isQuitting = true; 
-            
+            isQuitting = true;
+
             Debug.Log("[GameSaveManager] Application quitting - saving game...");
             Save();
         }

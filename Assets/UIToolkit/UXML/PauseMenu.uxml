@@ -1,0 +1,48 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UIToolkit/USS/PauseMenu.uss?fileID=7433441132597879392&amp;guid=cff639974fb267246b072080341aa52d&amp;type=3#PauseMenu" />
+    <ui:VisualElement name="pause-panel" class="pause-panel">
+        <ui:VisualElement class="pause-menu-container">
+            <ui:Label text="Paused" class="pause-title" />
+            <ui:VisualElement class="button-container">
+                <ui:Button text="Resume" name="resume-button" class="menu-button" />
+                <ui:Button text="Save Game" name="save-button" class="menu-button" />
+                <ui:Button text="New Game" name="new-game-button" class="menu-button menu-button-warning" />
+                <ui:Button text="How to Play" name="instructions-button" class="menu-button" />
+            </ui:VisualElement>
+            <ui:Label text="Press ESC to resume" class="pause-hint" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="instructions-panel" class="instructions-panel">
+        <ui:VisualElement class="instructions-container">
+            <ui:Label text="How to Play" class="instructions-title" />
+            <ui:ScrollView class="instructions-scroll">
+                <ui:VisualElement class="instructions-content">
+                    <ui:Label text="Welcome to Outback Explorer!" class="instructions-heading" />
+                    <ui:Label text="A relaxing driving game set in rural Australia. Take your time, explore the world, and watch it grow as you visit new areas." class="instructions-text" />
+                    <ui:Label text="Controls" class="instructions-heading" />
+                    <ui:Label text="W / ↑ - Accelerate forward" class="instructions-text" />
+                    <ui:Label text="S / ↓ - Reverse" class="instructions-text" />
+                    <ui:Label text="A / ← - Steer left" class="instructions-text" />
+                    <ui:Label text="D / → - Steer right" class="instructions-text" />
+                    <ui:Label text="Space - Brake" class="instructions-text" />
+                    <ui:Label text="E - Exit/Enter car" class="instructions-text" />
+                    <ui:Label text="ESC - Pause menu" class="instructions-text" />
+                    <ui:Label text="Gameplay" class="instructions-heading" />
+                    <ui:Label text="• Explore the Australian outback at your own pace" class="instructions-text" />
+                    <ui:Label text="• Visit different zones to unlock buildings and grow the town" class="instructions-text" />
+                    <ui:Label text="• Discover Australian wildlife (kangaroos, emus, echidnas, Tasmanian devils)" class="instructions-text" />
+                    <ui:Label text="• Learn interesting facts about the animals you encounter" class="instructions-text" />
+                    <ui:Label text="• There&apos;s no time limit, no failure - just relax and enjoy" class="instructions-text" />
+                    <ui:Label text="Tips" class="instructions-heading" />
+                    <ui:Label text="• Revisit zones multiple times to unlock more buildings" class="instructions-text" />
+                    <ui:Label text="• Get close to animals to discover them and learn their facts" class="instructions-text" />
+                    <ui:Label text="• Your progress is automatically saved every 2 minutes" class="instructions-text" />
+                    <ui:Label text="• Exit your car (press E) to explore on foot" class="instructions-text" />
+                    <ui:Label text="Goal" class="instructions-heading" />
+                    <ui:Label text="This is a relaxing experience - there are no objectives to complete. Simply enjoy the peaceful drive, discover all the animals, and watch the world come alive as you explore." class="instructions-text" />
+                </ui:VisualElement>
+            </ui:ScrollView>
+            <ui:Button text="Close" name="close-instructions-button" class="menu-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

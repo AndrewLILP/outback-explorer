@@ -1,0 +1,217 @@
+/* PauseMenu.uss - Styling for Pause Menu */
+
+/* ========================================
+   PAUSE OVERLAY - Full screen semi-transparent background
+   ======================================== */
+
+.pause-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    display: none; /* Hidden by default */
+}
+
+/* ========================================
+   PAUSE PANEL - Center container
+   ======================================== */
+
+.pause-panel {
+    width: 500px;
+    background-color: rgb(240, 240, 235);
+    border-radius: 12px;
+    padding: 40px;
+    border-width: 3px;
+    border-color: rgb(100, 80, 60);
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========================================
+   TITLES
+   ======================================== */
+
+.pause-title {
+    font-size: 48px;
+    -unity-font-style: bold;
+    color: rgb(60, 45, 30);
+    margin-bottom: 10px;
+    -unity-text-align: upper-center;
+    letter-spacing: 3px;
+}
+
+.game-subtitle {
+    font-size: 18px;
+    color: rgb(120, 100, 80);
+    margin-bottom: 30px;
+    -unity-text-align: upper-center;
+    -unity-font-style: italic;
+}
+
+/* ========================================
+   BUTTONS CONTAINER
+   ======================================== */
+
+.buttons-container {
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* ========================================
+   PAUSE BUTTONS
+   ======================================== */
+
+.pause-button {
+    width: 280px;
+    height: 50px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-width: 2px;
+    background-color: rgb(220, 210, 200);
+    border-color: rgb(100, 80, 60);
+    color: rgb(40, 30, 20);
+    -unity-font-style: bold;
+    transition-duration: 0.2s;
+}
+
+.pause-button:hover {
+    background-color: rgb(255, 245, 230);
+    border-color: rgb(140, 110, 80);
+    scale: 1.05;
+}
+
+.pause-button:active {
+    background-color: rgb(180, 170, 160);
+    scale: 0.98;
+}
+
+/* Primary Button (Resume) */
+.primary-button {
+    background-color: rgb(100, 180, 100);
+    border-color: rgb(60, 120, 60);
+    color: white;
+}
+
+.primary-button:hover {
+    background-color: rgb(120, 200, 120);
+    border-color: rgb(80, 140, 80);
+}
+
+.primary-button:active {
+    background-color: rgb(80, 140, 80);
+}
+
+/* Danger Button (New Game) */
+.danger-button {
+    background-color: rgb(200, 100, 100);
+    border-color: rgb(140, 60, 60);
+    color: white;
+}
+
+.danger-button:hover {
+    background-color: rgb(220, 120, 120);
+    border-color: rgb(160, 80, 80);
+}
+
+.danger-button:active {
+    background-color: rgb(160, 80, 80);
+}
+
+/* ========================================
+   HOTKEY HINT
+   ======================================== */
+
+.hotkey-hint {
+    font-size: 14px;
+    color: rgb(140, 120, 100);
+    -unity-text-align: upper-center;
+    margin-top: 20px;
+    -unity-font-style: italic;
+}
+
+/* ========================================
+   INSTRUCTIONS OVERLAY
+   ======================================== */
+
+.instructions-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    display: none; /* Hidden by default */
+}
+
+.instructions-content {
+    width: 700px;
+    max-height: 80%;
+    background-color: rgb(240, 240, 235);
+    border-radius: 12px;
+    padding: 40px;
+    border-width: 3px;
+    border-color: rgb(100, 80, 60);
+    overflow: scroll; /* Enable scrolling if content is long */
+}
+
+/* ========================================
+   INSTRUCTIONS TEXT
+   ======================================== */
+
+.instructions-title {
+    font-size: 36px;
+    -unity-font-style: bold;
+    color: rgb(60, 45, 30);
+    margin-bottom: 20px;
+    -unity-text-align: upper-center;
+}
+
+.instructions-section-title {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(80, 60, 40);
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.instructions-text {
+    font-size: 16px;
+    color: rgb(60, 50, 40);
+    margin-bottom: 8px;
+    white-space: normal;
+    line-height: 24px;
+}
+
+/* ========================================
+   LISTS
+   ======================================== */
+
+.controls-list,
+.tips-list {
+    margin-left: 10px;
+    margin-bottom: 15px;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS (if needed in future)
+   ======================================== */
+
+/* For smaller screens, reduce panel width */
+@media (max-width: 800px) {
+    .pause-panel {
+        width: 90%;
+        padding: 30px;
+    }
+    
+    .instructions-content {
+        width: 90%;
+        padding: 30px;
+    }
+}
