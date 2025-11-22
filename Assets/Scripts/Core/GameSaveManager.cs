@@ -6,6 +6,7 @@ using System.IO;
 using UnityEngine;
 using RelaxingDrive.Animals; // For AnimalDiscoveryManager
 using RelaxingDrive.World; // For ActivatableObject
+using UnityEngine.SceneManagement;
 
 namespace RelaxingDrive.Core
 {
@@ -73,6 +74,9 @@ namespace RelaxingDrive.Core
 
         #region Private Fields
 
+        // Shutdown tracking - prevents crashes during Unity cleanup - crash fix
+        private static bool isQuitting = false;
+
         private string saveFilePath;
         private Coroutine autoSaveCoroutine;
         private bool isInitialized = false;
@@ -137,21 +141,36 @@ namespace RelaxingDrive.Core
                     Debug.Log("[GameSaveManager] F7 pressed - Delete save triggered");
                     DeleteSave();
                 }
+
+                if (Input.GetKeyDown(KeyCode.F8))
+                {
+                    Debug.Log("[GameSaveManager] F8 pressed - Starting new game");
+                    StartNewGame();
+                }
             }
         }
 
         private void OnApplicationQuit()
         {
+            // Set flag BEFORE saving to prevent race conditions
+            isQuitting = true; 
+            
             Debug.Log("[GameSaveManager] Application quitting - saving game...");
             Save();
         }
 
         private void OnDestroy()
         {
-            // Save on destroy (backup for quit)
-            if (instance == this)
+            // Skip save if already saved during quit
+            // This prevents double-save and accessing destroyed objects
+            if (instance == this && !isQuitting)
             {
+                Debug.Log("[GameSaveManager] OnDestroy - saving game (unexpected destroy)");
                 Save();
+            }
+            else if (isQuitting)
+            {
+                Debug.Log("[GameSaveManager] OnDestroy - skipping save (already saved on quit)");
             }
         }
 
@@ -169,7 +188,7 @@ namespace RelaxingDrive.Core
             Debug.Log($"[GameSaveManager] Initialized");
             Debug.Log($"[GameSaveManager] Save file path: {saveFilePath}");
             Debug.Log($"[GameSaveManager] Auto-save: {(enableAutoSave ? "Enabled" : "Disabled")} ({autoSaveInterval}s interval)");
-            Debug.Log($"[GameSaveManager] Debug keys: {(enableDebugKeys ? "Enabled" : "Disabled")} (F5=Save, F6=Load, F7=Delete)");
+            Debug.Log($"[GameSaveManager] Debug keys: {(enableDebugKeys ? "Enabled" : "Disabled")} (F5=Save, F6=Load, F7=Delete, F8=NewGame)");
 
             isInitialized = true;
         }
@@ -185,6 +204,23 @@ namespace RelaxingDrive.Core
         {
             try
             {
+                // Safety check: Don't save if managers are destroyed during shutdown
+                if (isQuitting)
+                {
+                    // Verify critical managers still exist
+                    if (VisitManager.Instance == null)
+                    {
+                        Debug.LogWarning("[GameSaveManager] ⚠️ VisitManager destroyed - aborting save to prevent crash");
+                        return;
+                    }
+
+                    if (AnimalDiscoveryManager.Instance == null)
+                    {
+                        Debug.LogWarning("[GameSaveManager] ⚠️ AnimalDiscoveryManager destroyed - aborting save to prevent crash");
+                        return;
+                    }
+                }
+
                 Debug.Log("[GameSaveManager] Starting save...");
 
                 // Create new save data object
@@ -300,22 +336,38 @@ namespace RelaxingDrive.Core
             }
             else
             {
-                Debug.LogWarning("[GameSaveManager] VisitManager not found - skipping visit data");
+                // Only warn if this is unexpected (not during shutdown)
+                if (!isQuitting)
+                {
+                    Debug.LogWarning("[GameSaveManager] VisitManager not found - skipping visit data");
+                }
+                else
+                {
+                    Debug.Log("[GameSaveManager] VisitManager gone (shutdown in progress)");
+                }
             }
 
             // Collect AnimalDiscoveryManager data
             if (AnimalDiscoveryManager.Instance != null)
             {
                 HashSet<string> discoveredAnimals = AnimalDiscoveryManager.Instance.GetDiscoveredAnimals();
-                saveData.discoveredAnimals = new List<string>(discoveredAnimals); // Convert HashSet to List
+                saveData.discoveredAnimals = new List<string>(discoveredAnimals);
                 Debug.Log($"[GameSaveManager] Saved {saveData.discoveredAnimals.Count} discovered animals");
             }
             else
             {
-                Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
+                // Only warn if this is unexpected (not during shutdown)
+                if (!isQuitting)
+                {
+                    Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
+                }
+                else
+                {
+                    Debug.Log("[GameSaveManager] AnimalDiscoveryManager gone (shutdown in progress)");
+                }
             }
 
-            // Collect building activation data
+            // Collect building activation data (always available - stored locally)
             saveData.activatedBuildingIDs = new List<string>(activatedBuildingsRuntime);
             Debug.Log($"[GameSaveManager] Saved {saveData.activatedBuildingIDs.Count} activated buildings");
         }
@@ -484,6 +536,69 @@ namespace RelaxingDrive.Core
             }
 
             Debug.Log($"[GameSaveManager] Activated {activatedCount}/{savedBuildingIDs.Count} saved buildings");
+        }
+
+        #endregion
+
+
+        #region New Game
+
+        /// <summary>
+        /// Starts a completely fresh game:
+        /// 1. Deletes save file
+        /// 2. Resets all manager states
+        /// 3. Clears runtime tracking
+        /// 4. Reloads current scene
+        /// 
+        /// Use F8 key or call GameSaveManager.Instance.StartNewGame()
+        /// </summary>
+        public void StartNewGame()
+        {
+            Debug.Log("========================================");
+            Debug.Log("[GameSaveManager] STARTING NEW GAME");
+            Debug.Log("========================================");
+
+            // Step 1: Delete save file
+            DeleteSave();
+
+            // Step 2: Reset all manager states
+            ResetAllManagers();
+
+            // Step 3: Clear runtime tracking
+            activatedBuildingsRuntime.Clear();
+
+            // Step 4: Reload current scene
+            Debug.Log("[GameSaveManager] Reloading scene for fresh start...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+            );
+
+            Debug.Log("[GameSaveManager] ✅ New game started successfully!");
+        }
+
+        /// <summary>
+        /// Resets all game manager states to default
+        /// </summary>
+        private void ResetAllManagers()
+        {
+            Debug.Log("[GameSaveManager] Resetting all managers...");
+
+            // Reset VisitManager
+            if (VisitManager.Instance != null)
+            {
+                VisitManager.Instance.ResetAllVisits();
+                Debug.Log("[GameSaveManager] - VisitManager reset");
+            }
+
+            // Reset AnimalDiscoveryManager
+            if (AnimalDiscoveryManager.Instance != null)
+            {
+                AnimalDiscoveryManager.Instance.ResetAllDiscoveries();
+                Debug.Log("[GameSaveManager] - AnimalDiscoveryManager reset");
+            }
+
+            // Note: Buildings will reset when scene reloads
+            Debug.Log("[GameSaveManager] - All managers reset complete");
         }
 
         #endregion

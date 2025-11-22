@@ -15,6 +15,8 @@ namespace RelaxingDrive.Core
         private static VisitManager instance;
         private static bool isQuitting = false;
 
+        
+
         public static VisitManager Instance
         {
             get
