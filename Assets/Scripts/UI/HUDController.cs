@@ -1,15 +1,18 @@
 ﻿// HUDController.cs
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 using PolyStang; // Reference to your car controller namespace
-using RelaxingDrive.Animals;
-using System.Collections;
+using RelaxingDrive.Core;
+using RelaxingDrive.Animals; // Required for AnimalData
 
 namespace RelaxingDrive.UI
 {
     /// <summary>
     /// Controls the HUD elements using UI Toolkit.
-    /// Displays speed and tracks animal discovery progress.
+    /// Displays speed, animal discovery progress, and pause menu with Save/Load.
+    /// Sprint 4: Added Save/Load button functionality.
+    /// BUG FIX: Added Start() method to update discovery display after save data loads.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class HUDController : MonoBehaviour
@@ -19,22 +22,15 @@ namespace RelaxingDrive.UI
         [SerializeField] private UIDocument uiDocument;
 
         [Header("Settings")]
-        [SerializeField] private float speedMultiplier = 4f; // Same as car controller
-        [SerializeField] private int totalAnimalSpecies = 4; // Total unique animals
+        [SerializeField] private float speedMultiplier = 4f;
+        [SerializeField] private bool showDebugLogs = true;
 
-        // Animal speed constants (km/h)
-        private const float ECHIDNA_SPEED = 5f;
-        private const float DEVIL_SPEED = 13f;
-        private const float EMU_SPEED = 50f;
-        private const float KANGAROO_SPEED = 70f;
-
-        // Speedometer UI Elements
+        // Speed UI Elements
         private Label speedLabel;
         private VisualElement speedometer;
-        private VisualElement animalSpeedTier;
-        private VisualElement speedIndicator;
+        private Label speedComparisonLabel;
 
-        // Discovery Progress UI Elements
+        // Animal Discovery UI Elements
         private Label progressText;
         private VisualElement kangarooIcon;
         private VisualElement emuIcon;
@@ -44,6 +40,24 @@ namespace RelaxingDrive.UI
         private Label emuLabel;
         private Label echidnaLabel;
         private Label devilLabel;
+
+        // Pause Menu Elements
+        private VisualElement pauseMenu;
+        private Button resumeButton;
+        private Button saveButton;
+        private Button newGameButton;
+        private Button instructionsButton;
+        private VisualElement instructionsPanel;
+        private Button closeInstructionsButton;
+
+        private bool isPaused = false;
+        private bool instructionsVisible = false;
+
+        // Animal speed constants (km/h for comparison)
+        private const float KANGAROO_SPEED = 60f;
+        private const float EMU_SPEED = 50f;
+        private const float ECHIDNA_SPEED = 2f;
+        private const float TASMANIAN_DEVIL_SPEED = 13f;
 
         private void Awake()
         {
@@ -57,22 +71,42 @@ namespace RelaxingDrive.UI
             SubscribeToEvents();
         }
 
+        // 🔧 FIX: Added Start() to update UI after save data loads
+        private void Start()
+        {
+            // Delay one frame to ensure AnimalDiscoveryManager has loaded save data
+            StartCoroutine(UpdateDiscoveryDisplayDelayed());
+        }
+
+        /// <summary>
+        /// Waits one frame then updates discovery display (ensures save data is loaded)
+        /// </summary>
+        private IEnumerator UpdateDiscoveryDisplayDelayed()
+        {
+            yield return null; // Wait one frame
+            
+            Log("🔄 Updating discovery display after potential save load...");
+            UpdateDiscoveryDisplay();
+        }
+
         private void OnDisable()
         {
             UnsubscribeFromEvents();
         }
 
+        /// <summary>
+        /// Query and cache all UI elements from UXML
+        /// </summary>
         private void SetupUIElements()
         {
             var root = uiDocument.rootVisualElement;
 
-            // Query speedometer elements
+            // Speed elements
             speedLabel = root.Q<Label>("SpeedLabel");
             speedometer = root.Q<VisualElement>("Speedometer");
-            animalSpeedTier = root.Q<VisualElement>("AnimalSpeedTier");
-            speedIndicator = root.Q<VisualElement>("SpeedIndicator");
+            speedComparisonLabel = root.Q<Label>("SpeedComparison");
 
-            // Query discovery progress elements
+            // Animal discovery progress elements
             progressText = root.Q<Label>("ProgressText");
 
             // Query animal icons
@@ -87,11 +121,99 @@ namespace RelaxingDrive.UI
             echidnaLabel = root.Q<Label>("EchidnaLabel");
             devilLabel = root.Q<Label>("DevilLabel");
 
+            // Pause menu elements
+            pauseMenu = root.Q<VisualElement>("PauseMenu");
+            resumeButton = root.Q<Button>("ResumeButton");
+            saveButton = root.Q<Button>("SaveButton");
+            newGameButton = root.Q<Button>("NewGameButton");
+            instructionsButton = root.Q<Button>("InstructionsButton");
+            instructionsPanel = root.Q<VisualElement>("InstructionsPanel");
+            closeInstructionsButton = root.Q<Button>("CloseInstructionsButton");
+
             // Initialize animal icon colors (add CSS classes)
             InitializeAnimalIcons();
 
             // Initialize discovery display
             UpdateDiscoveryDisplay();
+
+            // Register button callbacks
+            RegisterButtonCallbacks();
+
+            // Hide pause menu initially
+            if (pauseMenu != null)
+            {
+                pauseMenu.style.display = DisplayStyle.None;
+            }
+
+            // Hide instructions panel initially
+            if (instructionsPanel != null)
+            {
+                instructionsPanel.style.display = DisplayStyle.None;
+                instructionsVisible = false;
+            }
+
+            Log("✅ HUD UI elements setup complete");
+        }
+
+        /// <summary>
+        /// Register all button click callbacks
+        /// </summary>
+        private void RegisterButtonCallbacks()
+        {
+            // Resume button
+            if (resumeButton != null)
+            {
+                resumeButton.clicked += OnResumeClicked;
+                Log("✅ Resume button callback registered");
+            }
+            else
+            {
+                LogError("❌ Resume button not found in UXML!");
+            }
+
+            // Save button
+            if (saveButton != null)
+            {
+                saveButton.clicked += OnSaveClicked;
+                Log("✅ Save button callback registered");
+            }
+            else
+            {
+                LogError("❌ Save button not found in UXML!");
+            }
+
+            // New Game button
+            if (newGameButton != null)
+            {
+                newGameButton.clicked += OnNewGameClicked;
+                Log("✅ New Game button callback registered");
+            }
+            else
+            {
+                LogError("❌ New Game button not found in UXML!");
+            }
+
+            // Instructions button
+            if (instructionsButton != null)
+            {
+                instructionsButton.clicked += OnInstructionsClicked;
+                Log("✅ Instructions button callback registered");
+            }
+            else
+            {
+                LogError("❌ Instructions button not found in UXML!");
+            }
+
+            // Close instructions button
+            if (closeInstructionsButton != null)
+            {
+                closeInstructionsButton.clicked += OnCloseInstructionsClicked;
+                Log("✅ Close Instructions button callback registered");
+            }
+            else
+            {
+                LogError("❌ Close Instructions button not found in UXML!");
+            }
         }
 
         /// <summary>
@@ -130,7 +252,133 @@ namespace RelaxingDrive.UI
         private void Update()
         {
             UpdateSpeed();
+            HandlePauseInput();
         }
+
+        /// <summary>
+        /// Handles ESC key to toggle pause menu
+        /// </summary>
+        private void HandlePauseInput()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (isPaused)
+                {
+                    HidePauseMenu();
+                }
+                else
+                {
+                    ShowPauseMenu();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows the pause menu
+        /// </summary>
+        private void ShowPauseMenu()
+        {
+            if (pauseMenu != null)
+            {
+                pauseMenu.style.display = DisplayStyle.Flex;
+                isPaused = true;
+                Time.timeScale = 0f; // Freeze game
+                Log("⏸️ Game paused");
+            }
+        }
+
+        /// <summary>
+        /// Hides the pause menu
+        /// </summary>
+        private void HidePauseMenu()
+        {
+            if (pauseMenu != null)
+            {
+                pauseMenu.style.display = DisplayStyle.None;
+                isPaused = false;
+                Time.timeScale = 1f; // Resume game
+
+                // Also hide instructions if they were showing
+                if (instructionsPanel != null)
+                {
+                    instructionsPanel.style.display = DisplayStyle.None;
+                    instructionsVisible = false;
+                }
+
+                Log("▶️ Game resumed");
+            }
+        }
+
+        #region Button Callbacks
+
+        private void OnResumeClicked()
+        {
+            Log("🔘 Resume button clicked!");
+            HidePauseMenu();
+        }
+
+        private void OnSaveClicked()
+        {
+            Log("🔘 Save button clicked!");
+
+            if (GameSaveManager.Instance != null)
+            {
+                GameSaveManager.Instance.Save();
+                Log("✅ Game saved successfully!");
+            }
+            else
+            {
+                LogError("❌ GameSaveManager not found!");
+            }
+        }
+
+        private void OnNewGameClicked()
+        {
+            Log("🔘 New Game button clicked!");
+
+            if (GameSaveManager.Instance != null)
+            {
+                HidePauseMenu();
+                GameSaveManager.Instance.StartNewGame();
+            }
+            else
+            {
+                LogError("❌ GameSaveManager not found!");
+            }
+        }
+
+        private void OnInstructionsClicked()
+        {
+            Log("🔘 Instructions button clicked!");
+
+            if (instructionsPanel != null)
+            {
+                if (!instructionsVisible)
+                {
+                    instructionsPanel.style.display = DisplayStyle.Flex;
+                    instructionsVisible = true;
+                    Log("📖 Instructions panel shown");
+                }
+            }
+            else
+            {
+                LogError("❌ Instructions panel not found!");
+            }
+        }
+
+        private void OnCloseInstructionsClicked()
+        {
+            Log("🔘 Close Instructions button clicked!");
+
+            if (instructionsPanel != null)
+            {
+                instructionsPanel.style.display = DisplayStyle.None;
+                instructionsVisible = false;
+                Log("📖 Instructions panel hidden");
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Updates the speed display based on car's rigidbody velocity
@@ -140,7 +388,6 @@ namespace RelaxingDrive.UI
             if (carController == null || speedLabel == null)
                 return;
 
-            // Get the car's rigidbody (same logic as CarController)
             Rigidbody carRb = carController.GetComponent<Rigidbody>();
 
             if (carRb != null)
@@ -148,166 +395,132 @@ namespace RelaxingDrive.UI
                 int roundedSpeed = (int)Mathf.Round(carRb.linearVelocity.magnitude * speedMultiplier);
                 speedLabel.text = $"{roundedSpeed}";
 
-                // Update animal speed tier (show only when moving)
-                UpdateAnimalSpeedTier(roundedSpeed);
+                // Update speed comparison
+                UpdateSpeedComparison(roundedSpeed);
             }
         }
 
         /// <summary>
-        /// Updates the animal speed tier display and indicator position
+        /// Compares player speed to animal speeds
         /// </summary>
-        private void UpdateAnimalSpeedTier(int currentSpeed)
+        private void UpdateSpeedComparison(float playerSpeed)
         {
-            if (animalSpeedTier == null || speedIndicator == null)
+            if (speedComparisonLabel == null)
                 return;
 
-            // Show/hide based on speed > 1
-            if (currentSpeed > 1)
+            if (playerSpeed >= KANGAROO_SPEED)
             {
-                // Show the tier
-                if (!animalSpeedTier.ClassListContains("visible"))
-                {
-                    animalSpeedTier.AddToClassList("visible");
-                }
-
-                // Calculate indicator position (0-100%)
-                float percentage = CalculateSpeedPercentage(currentSpeed);
-
-                // Update indicator position (CSS left property)
-                speedIndicator.style.left = new StyleLength(new Length(percentage, LengthUnit.Percent));
+                speedComparisonLabel.text = "Faster than a kangaroo! 🦘";
+            }
+            else if (playerSpeed >= EMU_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than an emu! 🦤";
+            }
+            else if (playerSpeed >= TASMANIAN_DEVIL_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than a Tasmanian devil! 😈";
+            }
+            else if (playerSpeed >= ECHIDNA_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than an echidna! 🦔";
             }
             else
             {
-                // Hide the tier when stopped
-                if (animalSpeedTier.ClassListContains("visible"))
-                {
-                    animalSpeedTier.RemoveFromClassList("visible");
-                }
+                speedComparisonLabel.text = "Take your time... 🐌";
             }
         }
 
         /// <summary>
-        /// Calculates the speed indicator position as a percentage (0-100%)
-        /// based on animal speed milestones
+        /// Called when an animal is discovered
         /// </summary>
-        private float CalculateSpeedPercentage(int speed)
+        private void HandleAnimalDiscovered(AnimalData animal, bool isFirstDiscovery)
         {
-            // Map speed to position between animal markers
-            // Markers are evenly spaced: Echidna (0%), Devil (33%), Emu (66%), Kangaroo (100%)
-
-            if (speed <= ECHIDNA_SPEED)
-            {
-                // 0-5 km/h: Between start and Echidna (0-25%)
-                return Mathf.Lerp(0f, 25f, speed / ECHIDNA_SPEED);
-            }
-            else if (speed <= DEVIL_SPEED)
-            {
-                // 5-13 km/h: Between Echidna and Devil (25-50%)
-                float t = (speed - ECHIDNA_SPEED) / (DEVIL_SPEED - ECHIDNA_SPEED);
-                return Mathf.Lerp(25f, 50f, t);
-            }
-            else if (speed <= EMU_SPEED)
-            {
-                // 13-50 km/h: Between Devil and Emu (50-75%)
-                float t = (speed - DEVIL_SPEED) / (EMU_SPEED - DEVIL_SPEED);
-                return Mathf.Lerp(50f, 75f, t);
-            }
-            else if (speed <= KANGAROO_SPEED)
-            {
-                // 50-70 km/h: Between Emu and Kangaroo (75-100%)
-                float t = (speed - EMU_SPEED) / (KANGAROO_SPEED - EMU_SPEED);
-                return Mathf.Lerp(75f, 100f, t);
-            }
-            else
-            {
-                // Above Kangaroo speed: Stay at 100%
-                return 100f;
-            }
-        }
-
-        /// <summary>
-        /// Handles when an animal is discovered
-        /// </summary>
-        private void HandleAnimalDiscovered(AnimalData animalData, bool isFirstDiscovery)
-        {
-            if (animalData == null) return;
-
-            // Update the specific animal's UI
-            UpdateAnimalUI(animalData.AnimalName, isFirstDiscovery);
-
-            // Update overall progress display
             UpdateDiscoveryDisplay();
-        }
 
-        /// <summary>
-        /// Updates UI for a specific animal (icon + label)
-        /// </summary>
-        private void UpdateAnimalUI(string animalName, bool isFirstDiscovery)
-        {
-            VisualElement icon = null;
-            Label label = null;
-
-            // Get the correct icon and label based on animal name
-            switch (animalName.ToLower())
+            if (isFirstDiscovery)
             {
-                case "kangaroo":
-                    icon = kangarooIcon;
-                    label = kangarooLabel;
-                    break;
-                case "emu":
-                    icon = emuIcon;
-                    label = emuLabel;
-                    break;
-                case "echidna":
-                    icon = echidnaIcon;
-                    label = echidnaLabel;
-                    break;
-                case "tasmanian devil":
-                    icon = devilIcon;
-                    label = devilLabel;
-                    break;
-                default:
-                    Debug.LogWarning($"HUDController: Unknown animal name '{animalName}'");
-                    return;
-            }
-
-            if (icon != null)
-            {
-                // Add "discovered" class to make icon fully visible
-                icon.AddToClassList("discovered");
-
-                // Trigger pulse animation if first discovery
-                if (isFirstDiscovery)
+                // Pulse the newly discovered animal icon
+                VisualElement icon = GetIconForAnimal(animal.AnimalName);
+                if (icon != null)
                 {
                     StartCoroutine(PulseIcon(icon));
                 }
             }
+        }
 
-            if (label != null)
+        /// <summary>
+        /// Updates the discovery progress display
+        /// </summary>
+        private void UpdateDiscoveryDisplay()
+        {
+            if (AnimalDiscoveryManager.Instance == null)
+                return;
+
+            int discoveredCount = AnimalDiscoveryManager.Instance.GetDiscoveryCount();
+            int totalCount = 4; // Kangaroo, Emu, Echidna, Tasmanian Devil (update when adding more animals)
+
+            // Update progress text
+            if (progressText != null)
             {
-                // Update label text and style
-                label.text = $"✓ {animalName}";
-                label.RemoveFromClassList("undiscovered");
-                label.AddToClassList("discovered");
+                progressText.text = $"{discoveredCount}/{totalCount} Animals Discovered";
+            }
+
+            // Update individual animal indicators
+            UpdateAnimalIndicator("Kangaroo", kangarooIcon, kangarooLabel);
+            UpdateAnimalIndicator("Emu", emuIcon, emuLabel);
+            UpdateAnimalIndicator("Echidna", echidnaIcon, echidnaLabel);
+            UpdateAnimalIndicator("Tasmanian Devil", devilIcon, devilLabel);
+        }
+
+        /// <summary>
+        /// Updates a single animal's icon/label based on discovery status
+        /// </summary>
+        private void UpdateAnimalIndicator(string animalName, VisualElement icon, Label label)
+        {
+            if (AnimalDiscoveryManager.Instance == null || icon == null)
+                return;
+
+            bool discovered = AnimalDiscoveryManager.Instance.HasDiscovered(animalName);
+
+            if (discovered)
+            {
+                icon.RemoveFromClassList("undiscovered");
+                icon.AddToClassList("discovered");
+
+                if (label != null)
+                {
+                    label.text = "✓";
+                }
+            }
+            else
+            {
+                icon.RemoveFromClassList("discovered");
+                icon.AddToClassList("undiscovered");
+
+                if (label != null)
+                {
+                    label.text = "?";
+                }
             }
         }
 
         /// <summary>
-        /// Updates the progress text (e.g., "Discovered: 2/4 (50%)")
+        /// Gets the icon element for a given animal name
         /// </summary>
-        private void UpdateDiscoveryDisplay()
+        private VisualElement GetIconForAnimal(string animalName)
         {
-            if (progressText == null || AnimalDiscoveryManager.Instance == null)
-                return;
-
-            int discoveredCount = AnimalDiscoveryManager.Instance.GetDiscoveryCount();
-            float percentage = (float)discoveredCount / totalAnimalSpecies * 100f;
-
-            progressText.text = $"Discovered: {discoveredCount}/{totalAnimalSpecies} ({percentage:F0}%)";
+            switch (animalName)
+            {
+                case "Kangaroo": return kangarooIcon;
+                case "Emu": return emuIcon;
+                case "Echidna": return echidnaIcon;
+                case "Tasmanian Devil": return devilIcon;
+                default: return null;
+            }
         }
 
         /// <summary>
-        /// Pulse animation for newly discovered animal icon.
+        /// Pulses an icon to draw attention (for newly discovered animals)
         /// Unity UI Toolkit doesn't support CSS @keyframes, so we handle it via code.
         /// </summary>
         private IEnumerator PulseIcon(VisualElement icon)
@@ -344,5 +557,22 @@ namespace RelaxingDrive.UI
         {
             carController = controller;
         }
+
+        #region Debug Logging
+
+        private void Log(string message)
+        {
+            if (showDebugLogs)
+            {
+                Debug.Log($"[HUDController] {message}");
+            }
+        }
+
+        private void LogError(string message)
+        {
+            Debug.LogError($"[HUDController] {message}");
+        }
+
+        #endregion
     }
 }

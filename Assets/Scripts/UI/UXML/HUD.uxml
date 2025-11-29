@@ -4,44 +4,57 @@
         <ui:VisualElement name="Speedometer" class="speedometer">
             <ui:Label name="SpeedLabel" text="0" class="speed-value" />
             <ui:Label text="km/h" class="speed-unit" />
-            <ui:VisualElement name="AnimalSpeedTier" class="animal-speed-tier">
-                <ui:VisualElement name="AnimalMarkersRow" class="animal-markers-row">
-                    <ui:Label text="Ec" class="animal-marker" />
-                    <ui:Label text="TD" class="animal-marker" />
-                    <ui:Label text="E" class="animal-marker" />
-                    <ui:Label text="K" class="animal-marker" />
+            <ui:Label name="SpeedComparison" text="Take your time... 🐌" class="speed-comparison" />
+        </ui:VisualElement>
+        <ui:VisualElement name="DiscoveryProgress" class="discovery-progress">
+            <ui:Label name="ProgressText" text="0/4 Animals Discovered" class="progress-text" />
+            <ui:VisualElement name="AnimalIcons" class="animal-icons">
+                <ui:VisualElement name="KangarooContainer" class="animal-container">
+                    <ui:VisualElement name="KangarooIcon" class="animal-icon undiscovered" />
+                    <ui:Label name="KangarooLabel" text="?" class="animal-label" />
                 </ui:VisualElement>
-                <ui:VisualElement name="SpeedBarContainer" class="speed-bar-container">
-                    <ui:VisualElement name="SpeedBar" class="speed-bar" />
-                    <ui:VisualElement name="SpeedIndicator" class="speed-indicator" />
+                <ui:VisualElement name="EmuContainer" class="animal-container">
+                    <ui:VisualElement name="EmuIcon" class="animal-icon undiscovered" />
+                    <ui:Label name="EmuLabel" text="?" class="animal-label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="EchidnaContainer" class="animal-container">
+                    <ui:VisualElement name="EchidnaIcon" class="animal-icon undiscovered" />
+                    <ui:Label name="EchidnaLabel" text="?" class="animal-label" />
+                </ui:VisualElement>
+                <ui:VisualElement name="DevilContainer" class="animal-container">
+                    <ui:VisualElement name="DevilIcon" class="animal-icon undiscovered" />
+                    <ui:Label name="DevilLabel" text="?" class="animal-label" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="MissionIndicator" class="mission-indicator">
             <ui:Label name="MissionText" class="mission-text" />
         </ui:VisualElement>
-        <ui:VisualElement name="DiscoveryProgressContainer" class="discovery-progress">
-            <ui:VisualElement name="AnimalIconsRow" class="icons-row">
-                <ui:VisualElement name="KangarooIcon" class="animal-icon">
-                    <ui:Label text="K" class="icon-initial" />
-                </ui:VisualElement>
-                <ui:VisualElement name="EmuIcon" class="animal-icon">
-                    <ui:Label text="E" class="icon-initial" />
-                </ui:VisualElement>
-                <ui:VisualElement name="EchidnaIcon" class="animal-icon">
-                    <ui:Label text="Ec" class="icon-initial" />
-                </ui:VisualElement>
-                <ui:VisualElement name="DevilIcon" class="animal-icon">
-                    <ui:Label text="TD" class="icon-initial" />
-                </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="PauseMenu" class="pause-menu" style="display: none;">
+        <ui:VisualElement name="PauseContainer" class="pause-container">
+            <ui:Label text="PAUSED" class="pause-title" />
+            <ui:Button name="ResumeButton" text="Resume" class="pause-button" />
+            <ui:Button name="SaveButton" text="Save Game" class="pause-button" />
+            <ui:Button name="NewGameButton" text="New Game" class="pause-button" />
+            <ui:Button name="InstructionsButton" text="Instructions" class="pause-button" />
+        </ui:VisualElement>
+        <ui:VisualElement name="InstructionsPanel" class="instructions-panel" style="display: none;">
+            <ui:Label text="CONTROLS" class="instructions-title" />
+            <ui:VisualElement class="instructions-content">
+                <ui:Label text="WASD / Arrow Keys - Drive" class="instruction-line" />
+                <ui:Label text="Space - Brake" class="instruction-line" />
+                <ui:Label text="E - Enter/Exit Car" class="instruction-line" />
+                <ui:Label text="Mouse - Look Around" class="instruction-line" />
+                <ui:Label text="ESC - Pause Menu" class="instruction-line" />
+                <ui:Label class="instruction-spacer" />
+                <ui:Label text="SAVE/LOAD" class="instruction-line" />
+                <ui:Label text="F5 - Quick Save" class="instruction-line" />
+                <ui:Label text="F6 - Quick Load" class="instruction-line" />
+                <ui:Label text="F7 - Delete Save" class="instruction-line" />
+                <ui:Label text="F8 - New Game" class="instruction-line" />
             </ui:VisualElement>
-            <ui:Label name="ProgressText" text="Discovered: 0/4 (0%)" class="progress-text" />
-            <ui:VisualElement name="AnimalList" class="animal-list">
-                <ui:Label name="KangarooLabel" text="❓ Kangaroo" class="animal-name undiscovered" />
-                <ui:Label name="EmuLabel" text="❓ Emu" class="animal-name undiscovered" />
-                <ui:Label name="EchidnaLabel" text="❓ Echidna" class="animal-name undiscovered" />
-                <ui:Label name="DevilLabel" text="❓ Tasmanian Devil" class="animal-name undiscovered" />
-            </ui:VisualElement>
+            <ui:Button name="CloseInstructionsButton" text="Close" class="pause-button" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -1,90 +1,76 @@
 ﻿// GameSaveManager.cs
-using System;
-using System.Collections;
+// Singleton manager for saving and loading game state
+// Uses JsonUtility for serialization and works with GameSaveData.cs
+// 
+// BUG FIX: StartNewGame() now destroys DontDestroyOnLoad singletons before scene reload
+
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
-using RelaxingDrive.Animals; // For AnimalDiscoveryManager
-using RelaxingDrive.World; // For ActivatableObject
-using UnityEngine.SceneManagement;
+using RelaxingDrive.Core;
+using RelaxingDrive.World;
+using RelaxingDrive.Animals;
 
 namespace RelaxingDrive.Core
 {
     /// <summary>
-    /// Singleton manager that handles all save/load operations.
-    /// Manages auto-save, manual save, and save-on-quit functionality.
-    /// 
-    /// DESIGN PATTERN: Singleton
-    /// - Ensures only one save manager exists
-    /// - Global access point for save/load operations
-    /// - Persists across scene loads (DontDestroyOnLoad)
-    /// 
-    /// USAGE:
-    /// - Auto-saves every 2 minutes (configurable)
-    /// - Saves on application quit
-    /// - Manual save: Press F5 or call GameSaveManager.Instance.Save()
-    /// - Manual load: Press F6 or call GameSaveManager.Instance.Load()
-    /// - Delete save: Press F7 (debug only)
+    /// Central manager for saving and loading game state.
+    /// Singleton pattern ensures only one instance exists.
+    /// Handles auto-save, manual save, and debug save/load features.
     /// </summary>
     public class GameSaveManager : MonoBehaviour
     {
         #region Singleton Pattern
 
         private static GameSaveManager instance;
+        private static bool isQuitting = false;
 
         public static GameSaveManager Instance
         {
             get
             {
+                if (isQuitting)
+                {
+                    return null;
+                }
+
                 if (instance == null)
                 {
-                    // Try to find existing instance
                     instance = FindFirstObjectByType<GameSaveManager>();
 
-                    // If still null, create new GameObject with manager
                     if (instance == null)
                     {
                         GameObject managerObject = new GameObject("GameSaveManager");
                         instance = managerObject.AddComponent<GameSaveManager>();
                     }
                 }
+
                 return instance;
             }
         }
 
         #endregion
 
-        #region Settings
+        #region Inspector Settings
 
         [Header("Save Settings")]
-        [Tooltip("Auto-save interval in seconds (default: 120 = 2 minutes)")]
-        [SerializeField] private float autoSaveInterval = 120f;
-
-        [Tooltip("Enable auto-save (disable for testing)")]
         [SerializeField] private bool enableAutoSave = true;
+        [SerializeField] private float autoSaveInterval = 120f; // 2 minutes
 
-        [Tooltip("Load save file automatically on game start")]
-        [SerializeField] private bool loadOnStart = true;
-
-        [Tooltip("Enable debug save/load keys (F5/F6/F7/F8)")]
+        [Header("Debug Settings")]
         [SerializeField] private bool enableDebugKeys = true;
-
-        [Header("File Settings")]
-        [Tooltip("Name of the save file")]
-        [SerializeField] private string saveFileName = "outback_save.json";
+        [SerializeField] private bool showDebugLogs = true;
 
         #endregion
 
         #region Private Fields
 
-        // Shutdown tracking - prevents crashes during Unity cleanup - crash fix
-        private static bool isQuitting = false;
-
         private string saveFilePath;
-        private Coroutine autoSaveCoroutine;
-        private bool isInitialized = false;
+        private float autoSaveTimer = 0f;
+        private bool hasSavedOnQuit = false;
 
-        // Runtime tracking of activated buildings
+        // Track activated buildings at runtime
         private HashSet<string> activatedBuildingsRuntime = new HashSet<string>();
 
         #endregion
@@ -109,82 +95,56 @@ namespace RelaxingDrive.Core
 
         private void Start()
         {
-            // Start auto-save coroutine
             if (enableAutoSave)
             {
                 StartAutoSave();
             }
 
-            // Auto-load on start (if enabled)
-            if (loadOnStart && SaveFileExists())
-            {
-                Load();
-                Debug.Log("[GameSaveManager] Auto-loaded save file on start");
-            }
-            else if (!SaveFileExists())
-            {
-                Debug.Log("[GameSaveManager] No save file found - starting fresh game");
-            }
-            else
-            {
-                Debug.Log("[GameSaveManager] Auto-load disabled - starting fresh game");
-            }
+            // Auto-load save file on game start
+            Load();
         }
-
 
         private void Update()
         {
-            // Debug keys (only if enabled)
+            // Auto-save timer
+            if (enableAutoSave)
+            {
+                autoSaveTimer += Time.deltaTime;
+
+                if (autoSaveTimer >= autoSaveInterval)
+                {
+                    Save();
+                    autoSaveTimer = 0f;
+                }
+            }
+
+            // Debug keys for testing
             if (enableDebugKeys)
             {
-                // F5 = Manual Save
-                if (Input.GetKeyDown(KeyCode.F5))
-                {
-                    Debug.Log("[GameSaveManager] F5 pressed - Manual save triggered");
-                    Save();
-                }
-
-                // F6 = Manual Load
-                if (Input.GetKeyDown(KeyCode.F6))
-                {
-                    Debug.Log("[GameSaveManager] F6 pressed - Manual load triggered");
-                    Load();
-                }
-
-                // F7 = Delete Save
-                if (Input.GetKeyDown(KeyCode.F7))
-                {
-                    Debug.Log("[GameSaveManager] F7 pressed - Delete save triggered");
-                    DeleteSave();
-                }
-
-                if (Input.GetKeyDown(KeyCode.F8))
-                {
-                    Debug.Log("[GameSaveManager] F8 pressed - Starting new game");
-                    StartNewGame();
-                }
+                HandleDebugKeys();
             }
         }
 
         private void OnApplicationQuit()
         {
-            // Set flag BEFORE saving to prevent race conditions
             isQuitting = true;
 
-            Debug.Log("[GameSaveManager] Application quitting - saving game...");
-            Save();
+            if (!hasSavedOnQuit)
+            {
+                Debug.Log("[GameSaveManager] Application quitting - saving game...");
+                Save();
+                hasSavedOnQuit = true;
+            }
         }
 
         private void OnDestroy()
         {
-            // Skip save if already saved during quit
-            // This prevents double-save and accessing destroyed objects
-            if (instance == this && !isQuitting)
+            if (!hasSavedOnQuit && !isQuitting)
             {
-                Debug.Log("[GameSaveManager] OnDestroy - saving game (unexpected destroy)");
+                Debug.Log("[GameSaveManager] OnDestroy - saving game...");
                 Save();
             }
-            else if (isQuitting)
+            else
             {
                 Debug.Log("[GameSaveManager] OnDestroy - skipping save (already saved on quit)");
             }
@@ -196,141 +156,120 @@ namespace RelaxingDrive.Core
 
         private void Initialize()
         {
-            if (isInitialized) return;
-
-            // Build save file path
-            saveFilePath = Path.Combine(Application.persistentDataPath, saveFileName);
-
-            Debug.Log($"[GameSaveManager] Initialized");
-            Debug.Log($"[GameSaveManager] Save file path: {saveFilePath}");
+            saveFilePath = Path.Combine(Application.persistentDataPath, "outback_save.json");
+            
+            Debug.Log("[GameSaveManager] Initialized");
+            Debug.Log("[GameSaveManager] Save file path: " + saveFilePath);
             Debug.Log($"[GameSaveManager] Auto-save: {(enableAutoSave ? "Enabled" : "Disabled")} ({autoSaveInterval}s interval)");
             Debug.Log($"[GameSaveManager] Debug keys: {(enableDebugKeys ? "Enabled" : "Disabled")} (F5=Save, F6=Load, F7=Delete, F8=NewGame)");
-
-            isInitialized = true;
         }
 
         #endregion
 
-        #region Save System
+        #region Save/Load Core
 
         /// <summary>
-        /// Saves all game data to disk as JSON
+        /// Saves current game state to JSON file
         /// </summary>
         public void Save()
         {
+            // Safety checks - prevent crashes if managers are destroyed
+            if (VisitManager.Instance == null)
+            {
+                Debug.LogWarning("[GameSaveManager] ⚠️ VisitManager destroyed - aborting save to prevent crash");
+                return;
+            }
+
+            if (AnimalDiscoveryManager.Instance == null)
+            {
+                Debug.LogWarning("[GameSaveManager] ⚠️ AnimalDiscoveryManager destroyed - aborting save");
+                return;
+            }
+
             try
             {
-                // Safety check: Don't save if managers are destroyed during shutdown
-                if (isQuitting)
-                {
-                    // Verify critical managers still exist
-                    if (VisitManager.Instance == null)
-                    {
-                        Debug.LogWarning("[GameSaveManager] ⚠️ VisitManager destroyed - aborting save to prevent crash");
-                        return;
-                    }
-
-                    if (AnimalDiscoveryManager.Instance == null)
-                    {
-                        Debug.LogWarning("[GameSaveManager] ⚠️ AnimalDiscoveryManager destroyed - aborting save to prevent crash");
-                        return;
-                    }
-                }
-
-                Debug.Log("[GameSaveManager] Starting save...");
-
-                // Create new save data object
                 GameSaveData saveData = new GameSaveData();
 
-                // Gather data from all managers
+                // Collect data from all managers
                 CollectSaveData(saveData);
 
-                // Serialize to JSON (pretty print for debugging)
+                // Serialize to JSON
                 string json = JsonUtility.ToJson(saveData, true);
-
-                // Write to file
                 File.WriteAllText(saveFilePath, json);
 
-                Debug.Log($"[GameSaveManager] ✅ Save successful!");
-                Debug.Log($"[GameSaveManager] {saveData.ToString()}");
+                if (showDebugLogs)
+                {
+                    Debug.Log($"[GameSaveManager] GameSaveData [Version {saveData.saveVersion}]");
+                    Debug.Log($"- Saved: {saveData.saveTimestamp}");
+                    Debug.Log($"- Zones Visited: {saveData.zoneIDs.Count}");
+                    Debug.Log($"- Animals Discovered: {saveData.discoveredAnimals.Count}");
+                    Debug.Log($"- Buildings Activated: {saveData.activatedBuildingIDs.Count}");
+                    Debug.Log("[GameSaveManager] ✅ Save successful!");
+                }
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
-                Debug.LogError($"[GameSaveManager] ❌ Save failed! Error: {e.Message}");
-                Debug.LogException(e);
+                Debug.LogError($"[GameSaveManager] ❌ Save failed: {e.Message}");
             }
         }
 
         /// <summary>
-        /// Loads game data from disk
+        /// Loads game state from JSON file
         /// </summary>
         public void Load()
         {
+            if (!File.Exists(saveFilePath))
+            {
+                Debug.Log("[GameSaveManager] No save file found - starting fresh");
+                return;
+            }
+
             try
             {
-                // Check if save file exists
-                if (!File.Exists(saveFilePath))
-                {
-                    Debug.Log("[GameSaveManager] No save file found - starting fresh game");
-                    return;
-                }
-
                 Debug.Log("[GameSaveManager] Loading save file...");
 
-                // Read JSON from file
                 string json = File.ReadAllText(saveFilePath);
-
-                // Deserialize
                 GameSaveData saveData = JsonUtility.FromJson<GameSaveData>(json);
 
                 if (saveData == null)
                 {
-                    Debug.LogWarning("[GameSaveManager] Save data is null - starting fresh game");
+                    Debug.LogWarning("[GameSaveManager] ⚠️ Save file corrupted");
                     return;
                 }
 
-                // Validate save version
-                if (saveData.saveVersion != 1)
-                {
-                    Debug.LogWarning($"[GameSaveManager] Save version mismatch! Expected 1, got {saveData.saveVersion}");
-                    Debug.LogWarning("[GameSaveManager] Attempting to load anyway...");
-                }
-
-                // Apply data to all managers
+                // Apply loaded data to managers
                 ApplySaveData(saveData);
 
-                Debug.Log($"[GameSaveManager] ✅ Load successful!");
-                Debug.Log($"[GameSaveManager] {saveData.ToString()}");
+                if (showDebugLogs)
+                {
+                    Debug.Log("[GameSaveManager] ✅ Load successful!");
+                    Debug.Log($"[GameSaveManager] GameSaveData [Version {saveData.saveVersion}]");
+                    Debug.Log($"- Saved: {saveData.saveTimestamp}");
+                    Debug.Log($"- Zones Visited: {saveData.zoneIDs.Count}");
+                    Debug.Log($"- Animals Discovered: {saveData.discoveredAnimals.Count}");
+                    Debug.Log($"- Buildings Activated: {saveData.activatedBuildingIDs.Count}");
+                    Debug.Log("[GameSaveManager] Auto-loaded save file on start");
+                }
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
-                Debug.LogError($"[GameSaveManager] ❌ Load failed! Error: {e.Message}");
-                Debug.LogError("[GameSaveManager] Starting fresh game instead");
-                Debug.LogException(e);
+                Debug.LogError($"[GameSaveManager] ❌ Load failed: {e.Message}");
             }
         }
 
         /// <summary>
-        /// Deletes the save file (debug only)
+        /// Deletes the save file
         /// </summary>
         public void DeleteSave()
         {
-            try
+            if (File.Exists(saveFilePath))
             {
-                if (File.Exists(saveFilePath))
-                {
-                    File.Delete(saveFilePath);
-                    Debug.Log("[GameSaveManager] ✅ Save file deleted!");
-                }
-                else
-                {
-                    Debug.Log("[GameSaveManager] No save file to delete");
-                }
+                File.Delete(saveFilePath);
+                Debug.Log("[GameSaveManager] ✅ Save file deleted!");
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogError($"[GameSaveManager] ❌ Failed to delete save file! Error: {e.Message}");
-                Debug.LogException(e);
+                Debug.Log("[GameSaveManager] No save file to delete");
             }
         }
 
@@ -339,234 +278,146 @@ namespace RelaxingDrive.Core
         #region Data Collection
 
         /// <summary>
-        /// Collects data from all game managers and populates the save data
+        /// Collects data from all managers and populates GameSaveData
         /// </summary>
         private void CollectSaveData(GameSaveData saveData)
         {
-            // Collect VisitManager data
+            // Collect visit counts from VisitManager
             if (VisitManager.Instance != null)
             {
-                Dictionary<string, int> visitData = VisitManager.Instance.GetAllVisitData();
-                saveData.SetVisitDictionary(visitData);
-                Debug.Log($"[GameSaveManager] Saved visit data for {visitData.Count} zones");
-            }
-            else
-            {
-                // Only warn if this is unexpected (not during shutdown)
-                if (!isQuitting)
-                {
-                    Debug.LogWarning("[GameSaveManager] VisitManager not found - skipping visit data");
-                }
-                else
-                {
-                    Debug.Log("[GameSaveManager] VisitManager gone (shutdown in progress)");
-                }
+                Dictionary<string, int> visitDict = VisitManager.Instance.GetAllVisitData();
+                saveData.SetVisitDictionary(visitDict);
+                Debug.Log($"[GameSaveManager] Collected {saveData.zoneIDs.Count} zone visit counts");
             }
 
-            // Collect AnimalDiscoveryManager data
+            // Collect discovered animals from AnimalDiscoveryManager
             if (AnimalDiscoveryManager.Instance != null)
             {
                 HashSet<string> discoveredAnimals = AnimalDiscoveryManager.Instance.GetDiscoveredAnimals();
                 saveData.discoveredAnimals = new List<string>(discoveredAnimals);
                 Debug.Log($"[GameSaveManager] Saved {saveData.discoveredAnimals.Count} discovered animals");
             }
-            else
-            {
-                // Only warn if this is unexpected (not during shutdown)
-                if (!isQuitting)
-                {
-                    Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
-                }
-                else
-                {
-                    Debug.Log("[GameSaveManager] AnimalDiscoveryManager gone (shutdown in progress)");
-                }
-            }
 
-            // Collect building activation data (always available - stored locally)
-            saveData.activatedBuildingIDs = new List<string>(activatedBuildingsRuntime);
-            Debug.Log($"[GameSaveManager] Saved {saveData.activatedBuildingIDs.Count} activated buildings");
+            // Collect activated building IDs
+            saveData.activatedBuildingIDs = activatedBuildingsRuntime.ToList();
+            Debug.Log($"[GameSaveManager] Collected {saveData.activatedBuildingIDs.Count} activated buildings");
         }
 
         /// <summary>
-        /// Applies loaded data to all game managers
+        /// Applies loaded save data to all managers
         /// </summary>
         private void ApplySaveData(GameSaveData saveData)
         {
-            // Apply VisitManager data
+            // Restore visit counts to VisitManager
             if (VisitManager.Instance != null)
             {
-                Dictionary<string, int> visitData = saveData.GetVisitDictionary();
-                VisitManager.Instance.LoadVisitData(visitData);
-                Debug.Log($"[GameSaveManager] Loaded visit data for {visitData.Count} zones");
-            }
-            else
-            {
-                Debug.LogWarning("[GameSaveManager] VisitManager not found - skipping visit data");
+                Dictionary<string, int> visitDict = saveData.GetVisitDictionary();
+                VisitManager.Instance.LoadVisitData(visitDict);
+                Debug.Log($"[GameSaveManager] Loaded visit data for {visitDict.Count} zones");
             }
 
-            // Apply AnimalDiscoveryManager data
+            // Restore discovered animals to AnimalDiscoveryManager
             if (AnimalDiscoveryManager.Instance != null)
             {
-                HashSet<string> discoveredAnimals = new HashSet<string>(saveData.discoveredAnimals); // Convert List to HashSet
+                HashSet<string> discoveredAnimals = new HashSet<string>(saveData.discoveredAnimals);
                 AnimalDiscoveryManager.Instance.LoadDiscoveryData(discoveredAnimals);
-                Debug.Log($"[GameSaveManager] Loaded {discoveredAnimals.Count} discovered animals");
+                Debug.Log($"[GameSaveManager] Loaded {saveData.discoveredAnimals.Count} discovered animals");
+            }
+
+            // Restore activated buildings
+            if (saveData.activatedBuildingIDs != null && saveData.activatedBuildingIDs.Count > 0)
+            {
+                ActivateSavedBuildings(saveData.activatedBuildingIDs);
+                Debug.Log($"[GameSaveManager] Loaded {saveData.activatedBuildingIDs.Count} activated buildings");
             }
             else
             {
-                Debug.LogWarning("[GameSaveManager] AnimalDiscoveryManager not found - skipping animal data");
+                Debug.Log("[GameSaveManager] No saved buildings to activate");
+            }
+        }
+
+        #endregion
+
+        #region Building Activation
+
+        /// <summary>
+        /// Registers a building as activated (called by ActivatableObject)
+        /// </summary>
+        public void RegisterBuildingActivation(string buildingID)
+        {
+            if (!activatedBuildingsRuntime.Contains(buildingID))
+            {
+                activatedBuildingsRuntime.Add(buildingID);
+                Debug.Log($"[GameSaveManager] Registered building activation: {buildingID}");
+            }
+        }
+
+        /// <summary>
+        /// Alias for RegisterBuildingActivation (for backwards compatibility)
+        /// </summary>
+        public void RegisterActivatedBuilding(string buildingID)
+        {
+            RegisterBuildingActivation(buildingID);
+        }
+
+        /// <summary>
+        /// Checks if a building has been activated
+        /// </summary>
+        public bool IsBuildingActivated(string buildingID)
+        {
+            return activatedBuildingsRuntime.Contains(buildingID);
+        }
+
+        /// <summary>
+        /// Activates buildings from save data
+        /// </summary>
+        private void ActivateSavedBuildings(List<string> buildingIDs)
+        {
+            if (buildingIDs == null || buildingIDs.Count == 0)
+            {
+                Debug.Log("[GameSaveManager] No saved buildings to activate");
+                return;
             }
 
-            // Apply building activation data
-            activatedBuildingsRuntime = new HashSet<string>(saveData.activatedBuildingIDs);
-            ActivateSavedBuildings(saveData.activatedBuildingIDs);
-            Debug.Log($"[GameSaveManager] Loaded {saveData.activatedBuildingIDs.Count} activated buildings");
+            // Find all ActivatableObjects in the scene
+            ActivatableObject[] allBuildings = FindObjectsByType<ActivatableObject>(FindObjectsSortMode.None);
+
+            int activatedCount = 0;
+
+            foreach (string buildingID in buildingIDs)
+            {
+                // Find matching building by ID
+                ActivatableObject building = System.Array.Find(allBuildings, b => b.BuildingID == buildingID);
+
+                if (building != null && !building.IsActive)
+                {
+                    building.Activate();
+                    activatedBuildingsRuntime.Add(buildingID);
+                    activatedCount++;
+                    Debug.Log($"[GameSaveManager] Activated saved building: {buildingID}");
+                }
+            }
+
+            Debug.Log($"[GameSaveManager] Activated {activatedCount} buildings from save data");
         }
 
         #endregion
 
         #region Auto-Save
 
-        /// <summary>
-        /// Starts the auto-save coroutine
-        /// </summary>
         private void StartAutoSave()
         {
-            if (autoSaveCoroutine != null)
-            {
-                StopCoroutine(autoSaveCoroutine);
-            }
-
-            autoSaveCoroutine = StartCoroutine(AutoSaveCoroutine());
-            Debug.Log($"[GameSaveManager] Auto-save started (every {autoSaveInterval} seconds)");
-        }
-
-        /// <summary>
-        /// Auto-save coroutine - saves every X seconds
-        /// </summary>
-        private IEnumerator AutoSaveCoroutine()
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(autoSaveInterval);
-
-                Debug.Log("[GameSaveManager] Auto-save triggered");
-                Save();
-            }
-        }
-
-        /// <summary>
-        /// Stops auto-save (useful for debugging)
-        /// </summary>
-        public void StopAutoSave()
-        {
-            if (autoSaveCoroutine != null)
-            {
-                StopCoroutine(autoSaveCoroutine);
-                autoSaveCoroutine = null;
-                Debug.Log("[GameSaveManager] Auto-save stopped");
-            }
+            autoSaveTimer = 0f;
+            Debug.Log("[GameSaveManager] Auto-save started (every " + autoSaveInterval + " seconds)");
         }
 
         #endregion
 
-        #region Public Utilities
+        #region New Game / Reset
 
         /// <summary>
-        /// Checks if a save file exists
-        /// </summary>
-        public bool SaveFileExists()
-        {
-            return File.Exists(saveFilePath);
-        }
-
-        /// <summary>
-        /// Gets the full path to the save file
-        /// </summary>
-        public string GetSaveFilePath()
-        {
-            return saveFilePath;
-        }
-
-        /// <summary>
-        /// Gets info about the save file (for UI display)
-        /// </summary>
-        public string GetSaveFileInfo()
-        {
-            if (!File.Exists(saveFilePath))
-            {
-                return "No save file found";
-            }
-
-            FileInfo fileInfo = new FileInfo(saveFilePath);
-            return $"Last saved: {fileInfo.LastWriteTime:yyyy-MM-dd HH:mm:ss} ({fileInfo.Length} bytes)";
-        }
-
-        #endregion
-
-        #region Building Activation Helpers
-
-        /// <summary>
-        /// Called by ActivatableObject when it becomes active.
-        /// Registers the building so it persists in save data.
-        /// </summary>
-        public void RegisterActivatedBuilding(string buildingID)
-        {
-            if (string.IsNullOrEmpty(buildingID))
-            {
-                Debug.LogWarning("[GameSaveManager] Attempted to register building with empty ID");
-                return;
-            }
-
-            if (!activatedBuildingsRuntime.Contains(buildingID))
-            {
-                activatedBuildingsRuntime.Add(buildingID);
-                Debug.Log($"[GameSaveManager] Registered activated building: {buildingID}");
-            }
-        }
-
-        /// <summary>
-        /// Finds all ActivatableObjects in scene and activates the ones from save data.
-        /// Called during load process.
-        /// </summary>
-        private void ActivateSavedBuildings(List<string> savedBuildingIDs)
-        {
-            if (savedBuildingIDs == null || savedBuildingIDs.Count == 0)
-            {
-                Debug.Log("[GameSaveManager] No saved buildings to activate");
-                return;
-            }
-
-            // Find all ActivatableObjects in scene
-            ActivatableObject[] allBuildings = FindObjectsByType<ActivatableObject>(FindObjectsSortMode.None);
-
-            int activatedCount = 0;
-
-            foreach (var building in allBuildings)
-            {
-                if (savedBuildingIDs.Contains(building.BuildingID))
-                {
-                    building.ActivateFromSave();
-                    activatedCount++;
-                }
-            }
-
-            Debug.Log($"[GameSaveManager] Activated {activatedCount}/{savedBuildingIDs.Count} saved buildings");
-        }
-
-        #endregion
-
-
-        #region New Game
-
-        /// <summary>
-        /// Starts a completely fresh game:
-        /// 1. Deletes save file
-        /// 2. Resets all manager states
-        /// 3. Clears runtime tracking
-        /// 4. Reloads current scene
-        /// 
-        /// Use F8 key or call GameSaveManager.Instance.StartNewGame()
+        /// Starts a completely new game by deleting save file and reloading scene
+        /// 🔧 BUG FIX: Now destroys DontDestroyOnLoad singletons before scene reload
         /// </summary>
         public void StartNewGame()
         {
@@ -583,7 +434,28 @@ namespace RelaxingDrive.Core
             // Step 3: Clear runtime tracking
             activatedBuildingsRuntime.Clear();
 
-            // Step 4: Reload current scene
+            // Step 4: 🔧 FIX - Destroy DontDestroyOnLoad singletons to prevent duplicates
+            Debug.Log("[GameSaveManager] Destroying persistent singletons before reload...");
+
+            // Destroy VisitManager
+            if (VisitManager.Instance != null)
+            {
+                Destroy(VisitManager.Instance.gameObject);
+                Debug.Log("[GameSaveManager] - Destroyed VisitManager");
+            }
+
+            // Destroy AnimalDiscoveryManager
+            if (AnimalDiscoveryManager.Instance != null)
+            {
+                Destroy(AnimalDiscoveryManager.Instance.gameObject);
+                Debug.Log("[GameSaveManager] - Destroyed AnimalDiscoveryManager");
+            }
+
+            // Destroy GameSaveManager (this instance)
+            Debug.Log("[GameSaveManager] - Destroying GameSaveManager");
+            Destroy(gameObject);
+
+            // Step 5: Reload current scene
             Debug.Log("[GameSaveManager] Reloading scene for fresh start...");
             UnityEngine.SceneManagement.SceneManager.LoadScene(
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
@@ -593,7 +465,7 @@ namespace RelaxingDrive.Core
         }
 
         /// <summary>
-        /// Resets all game manager states to default
+        /// Resets all manager states without reloading scene
         /// </summary>
         private void ResetAllManagers()
         {
@@ -613,8 +485,38 @@ namespace RelaxingDrive.Core
                 Debug.Log("[GameSaveManager] - AnimalDiscoveryManager reset");
             }
 
-            // Note: Buildings will reset when scene reloads
             Debug.Log("[GameSaveManager] - All managers reset complete");
+        }
+
+        #endregion
+
+        #region Debug Keys
+
+        private void HandleDebugKeys()
+        {
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                Debug.Log("[GameSaveManager] F5 pressed - Manual save");
+                Save();
+            }
+
+            if (Input.GetKeyDown(KeyCode.F6))
+            {
+                Debug.Log("[GameSaveManager] F6 pressed - Manual load");
+                Load();
+            }
+
+            if (Input.GetKeyDown(KeyCode.F7))
+            {
+                Debug.Log("[GameSaveManager] F7 pressed - Delete save");
+                DeleteSave();
+            }
+
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                Debug.Log("[GameSaveManager] F8 pressed - Start new game");
+                StartNewGame();
+            }
         }
 
         #endregion
