@@ -9,7 +9,7 @@ namespace RelaxingDrive.Player
     /// Implements State Pattern - delegates behavior to current state.
     /// Singleton for easy access from other systems.
     /// 
-    /// POLISHED VERSION - Reduced debug spam, only logs state changes
+    /// FIXED VERSION - Auto-finds FollowCamera component
     /// </summary>
     public class PlayerStateManager : MonoBehaviour
     {
@@ -20,7 +20,7 @@ namespace RelaxingDrive.Player
         [Header("References")]
         [SerializeField] private GameObject carGameObject;
         [SerializeField] private GameObject playerCharacter; // Capsule or character model
-        [SerializeField] private FollowCamera followCamera;
+        [SerializeField] private FollowCamera followCamera; // Can leave empty - will auto-find
 
         [Header("Camera Settings")]
         [SerializeField] private Vector3 drivingCameraOffset = new Vector3(0f, 3f, -7f);
@@ -30,8 +30,8 @@ namespace RelaxingDrive.Player
         [SerializeField] private Vector3 exitCarOffset = new Vector3(2f, 0f, 0f); // Spawn to the right of car
 
         [Header("Debug")]
-        [SerializeField] private bool showDebugInfo = false; // Changed to false by default
-        [SerializeField] private bool logStateChanges = true; // Only log transitions
+        [SerializeField] private bool showDebugInfo = false;
+        [SerializeField] private bool logStateChanges = true;
 
         // States
         private PlayerState currentState;
@@ -68,6 +68,21 @@ namespace RelaxingDrive.Player
             if (carGameObject != null)
             {
                 carController = carGameObject.GetComponent<CarController>();
+            }
+
+            // AUTO-FIND FollowCamera if not assigned
+            if (followCamera == null)
+            {
+                followCamera = Object.FindFirstObjectByType<FollowCamera>();
+                
+                if (followCamera != null)
+                {
+                    Debug.Log($"[PlayerStateManager] Auto-found FollowCamera on GameObject: {followCamera.gameObject.name}");
+                }
+                else
+                {
+                    Debug.LogError("[PlayerStateManager] FollowCamera script not found in scene! Please add FollowCamera component to your Camera GameObject.");
+                }
             }
 
             // Initialize states
