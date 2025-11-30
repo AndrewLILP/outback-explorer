@@ -7,23 +7,48 @@
             <ui:Label name="SpeedComparison" text="Take your time... 🐌" class="speed-comparison" />
         </ui:VisualElement>
         <ui:VisualElement name="DiscoveryProgress" class="discovery-progress">
-            <ui:Label name="ProgressText" text="0/4 Animals Discovered" class="progress-text" />
+            <ui:Label name="ProgressText" text="0/7 Animals Discovered" class="progress-text" />
             <ui:VisualElement name="AnimalIcons" class="animal-icons">
-                <ui:VisualElement name="KangarooContainer" class="animal-container">
-                    <ui:VisualElement name="KangarooIcon" class="animal-icon undiscovered" />
-                    <ui:Label name="KangarooLabel" text="?" class="animal-label" />
+                <!-- Row 1: Easy Finds (Kangaroo, Emu, Echidna, Tasmanian Devil) -->
+                <ui:VisualElement name="Row1" class="animal-row">
+                    <ui:VisualElement name="KangarooContainer" class="animal-container">
+                        <ui:VisualElement name="KangarooIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="KangarooLabel" text="?" class="animal-label" />
+                        <ui:Label text="🦘" class="animal-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="EmuContainer" class="animal-container">
+                        <ui:VisualElement name="EmuIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="EmuLabel" text="?" class="animal-label" />
+                        <ui:Label text="🦤" class="animal-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="EchidnaContainer" class="animal-container">
+                        <ui:VisualElement name="EchidnaIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="EchidnaLabel" text="?" class="animal-label" />
+                        <ui:Label text="🦔" class="animal-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DevilContainer" class="animal-container">
+                        <ui:VisualElement name="DevilIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="DevilLabel" text="?" class="animal-label" />
+                        <ui:Label text="😈" class="animal-emoji" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="EmuContainer" class="animal-container">
-                    <ui:VisualElement name="EmuIcon" class="animal-icon undiscovered" />
-                    <ui:Label name="EmuLabel" text="?" class="animal-label" />
-                </ui:VisualElement>
-                <ui:VisualElement name="EchidnaContainer" class="animal-container">
-                    <ui:VisualElement name="EchidnaIcon" class="animal-icon undiscovered" />
-                    <ui:Label name="EchidnaLabel" text="?" class="animal-label" />
-                </ui:VisualElement>
-                <ui:VisualElement name="DevilContainer" class="animal-container">
-                    <ui:VisualElement name="DevilIcon" class="animal-icon undiscovered" />
-                    <ui:Label name="DevilLabel" text="?" class="animal-label" />
+                <!-- Row 2: Hard Finds (Koala, Frillneck Lizard, Platypus) -->
+                <ui:VisualElement name="Row2" class="animal-row">
+                    <ui:VisualElement name="KoalaContainer" class="animal-container">
+                        <ui:VisualElement name="KoalaIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="KoalaLabel" text="?" class="animal-label" />
+                        <ui:Label text="🐨" class="animal-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="FrillneckContainer" class="animal-container">
+                        <ui:VisualElement name="FrillneckIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="FrillneckLabel" text="?" class="animal-label" />
+                        <ui:Label text="🦎" class="animal-emoji" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="PlatypusContainer" class="animal-container">
+                        <ui:VisualElement name="PlatypusIcon" class="animal-icon undiscovered" />
+                        <ui:Label name="PlatypusLabel" text="?" class="animal-label" />
+                        <ui:Label text="🦆" class="animal-emoji" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

@@ -11,8 +11,7 @@ namespace RelaxingDrive.UI
     /// <summary>
     /// Controls the HUD elements using UI Toolkit.
     /// Displays speed, animal discovery progress, and pause menu with Save/Load.
-    /// Sprint 4: Added Save/Load button functionality.
-    /// BUG FIX: Added Start() method to update discovery display after save data loads.
+    /// Sprint 5: Updated to support 7 animals (Kangaroo, Emu, Echidna, Devil, Koala, Frillneck, Platypus)
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class HUDController : MonoBehaviour
@@ -32,14 +31,28 @@ namespace RelaxingDrive.UI
 
         // Animal Discovery UI Elements
         private Label progressText;
+        
+        // Row 1 Animals (Easy finds)
         private VisualElement kangarooIcon;
         private VisualElement emuIcon;
         private VisualElement echidnaIcon;
         private VisualElement devilIcon;
+        
+        // Row 2 Animals (Hard finds)
+        private VisualElement koalaIcon;
+        private VisualElement frillneckIcon;
+        private VisualElement platypusIcon;
+        
+        // Row 1 Labels
         private Label kangarooLabel;
         private Label emuLabel;
         private Label echidnaLabel;
         private Label devilLabel;
+        
+        // Row 2 Labels
+        private Label koalaLabel;
+        private Label frillneckLabel;
+        private Label platypusLabel;
 
         // Pause Menu Elements
         private VisualElement pauseMenu;
@@ -56,8 +69,11 @@ namespace RelaxingDrive.UI
         // Animal speed constants (km/h for comparison)
         private const float KANGAROO_SPEED = 60f;
         private const float EMU_SPEED = 50f;
-        private const float ECHIDNA_SPEED = 2f;
         private const float TASMANIAN_DEVIL_SPEED = 13f;
+        private const float FRILLNECK_LIZARD_SPEED = 30f; // Can sprint quickly
+        private const float KOALA_SPEED = 3f; // Very slow climber
+        private const float ECHIDNA_SPEED = 2f;
+        private const float PLATYPUS_SPEED = 7f; // Decent swimmer
 
         private void Awake()
         {
@@ -71,7 +87,6 @@ namespace RelaxingDrive.UI
             SubscribeToEvents();
         }
 
-        // 🔧 FIX: Added Start() to update UI after save data loads
         private void Start()
         {
             // Delay one frame to ensure AnimalDiscoveryManager has loaded save data
@@ -109,17 +124,27 @@ namespace RelaxingDrive.UI
             // Animal discovery progress elements
             progressText = root.Q<Label>("ProgressText");
 
-            // Query animal icons
+            // Query Row 1 animal icons (easy finds)
             kangarooIcon = root.Q<VisualElement>("KangarooIcon");
             emuIcon = root.Q<VisualElement>("EmuIcon");
             echidnaIcon = root.Q<VisualElement>("EchidnaIcon");
             devilIcon = root.Q<VisualElement>("DevilIcon");
+            
+            // Query Row 2 animal icons (hard finds)
+            koalaIcon = root.Q<VisualElement>("KoalaIcon");
+            frillneckIcon = root.Q<VisualElement>("FrillneckIcon");
+            platypusIcon = root.Q<VisualElement>("PlatypusIcon");
 
-            // Query animal labels
+            // Query Row 1 animal labels
             kangarooLabel = root.Q<Label>("KangarooLabel");
             emuLabel = root.Q<Label>("EmuLabel");
             echidnaLabel = root.Q<Label>("EchidnaLabel");
             devilLabel = root.Q<Label>("DevilLabel");
+            
+            // Query Row 2 animal labels
+            koalaLabel = root.Q<Label>("KoalaLabel");
+            frillneckLabel = root.Q<Label>("FrillneckLabel");
+            platypusLabel = root.Q<Label>("PlatypusLabel");
 
             // Pause menu elements
             pauseMenu = root.Q<VisualElement>("PauseMenu");
@@ -152,7 +177,7 @@ namespace RelaxingDrive.UI
                 instructionsVisible = false;
             }
 
-            Log("✅ HUD UI elements setup complete");
+            Log("✅ HUD UI elements setup complete (7 animals supported)");
         }
 
         /// <summary>
@@ -160,59 +185,34 @@ namespace RelaxingDrive.UI
         /// </summary>
         private void RegisterButtonCallbacks()
         {
-            // Resume button
             if (resumeButton != null)
             {
                 resumeButton.clicked += OnResumeClicked;
                 Log("✅ Resume button callback registered");
             }
-            else
-            {
-                LogError("❌ Resume button not found in UXML!");
-            }
 
-            // Save button
             if (saveButton != null)
             {
                 saveButton.clicked += OnSaveClicked;
                 Log("✅ Save button callback registered");
             }
-            else
-            {
-                LogError("❌ Save button not found in UXML!");
-            }
 
-            // New Game button
             if (newGameButton != null)
             {
                 newGameButton.clicked += OnNewGameClicked;
                 Log("✅ New Game button callback registered");
             }
-            else
-            {
-                LogError("❌ New Game button not found in UXML!");
-            }
 
-            // Instructions button
             if (instructionsButton != null)
             {
                 instructionsButton.clicked += OnInstructionsClicked;
                 Log("✅ Instructions button callback registered");
             }
-            else
-            {
-                LogError("❌ Instructions button not found in UXML!");
-            }
 
-            // Close instructions button
             if (closeInstructionsButton != null)
             {
                 closeInstructionsButton.clicked += OnCloseInstructionsClicked;
                 Log("✅ Close Instructions button callback registered");
-            }
-            else
-            {
-                LogError("❌ Close Instructions button not found in UXML!");
             }
         }
 
@@ -221,10 +221,16 @@ namespace RelaxingDrive.UI
         /// </summary>
         private void InitializeAnimalIcons()
         {
+            // Row 1 - Easy finds
             if (kangarooIcon != null) kangarooIcon.AddToClassList("kangaroo");
             if (emuIcon != null) emuIcon.AddToClassList("emu");
             if (echidnaIcon != null) echidnaIcon.AddToClassList("echidna");
             if (devilIcon != null) devilIcon.AddToClassList("devil");
+            
+            // Row 2 - Hard finds
+            if (koalaIcon != null) koalaIcon.AddToClassList("koala");
+            if (frillneckIcon != null) frillneckIcon.AddToClassList("frillneck");
+            if (platypusIcon != null) platypusIcon.AddToClassList("platypus");
         }
 
         /// <summary>
@@ -401,7 +407,7 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Compares player speed to animal speeds
+        /// Compares player speed to animal speeds (updated for 7 animals)
         /// </summary>
         private void UpdateSpeedComparison(float playerSpeed)
         {
@@ -416,9 +422,21 @@ namespace RelaxingDrive.UI
             {
                 speedComparisonLabel.text = "Faster than an emu! 🦤";
             }
+            else if (playerSpeed >= FRILLNECK_LIZARD_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than a frillneck lizard! 🦎";
+            }
             else if (playerSpeed >= TASMANIAN_DEVIL_SPEED)
             {
                 speedComparisonLabel.text = "Faster than a Tasmanian devil! 😈";
+            }
+            else if (playerSpeed >= PLATYPUS_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than a platypus! 🦆";
+            }
+            else if (playerSpeed >= KOALA_SPEED)
+            {
+                speedComparisonLabel.text = "Faster than a koala! 🐨";
             }
             else if (playerSpeed >= ECHIDNA_SPEED)
             {
@@ -449,7 +467,7 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Updates the discovery progress display
+        /// Updates the discovery progress display (supports 7 animals)
         /// </summary>
         private void UpdateDiscoveryDisplay()
         {
@@ -457,7 +475,7 @@ namespace RelaxingDrive.UI
                 return;
 
             int discoveredCount = AnimalDiscoveryManager.Instance.GetDiscoveryCount();
-            int totalCount = 4; // Kangaroo, Emu, Echidna, Tasmanian Devil (update when adding more animals)
+            int totalCount = 7; // Updated from 4 to 7 animals
 
             // Update progress text
             if (progressText != null)
@@ -465,11 +483,16 @@ namespace RelaxingDrive.UI
                 progressText.text = $"{discoveredCount}/{totalCount} Animals Discovered";
             }
 
-            // Update individual animal indicators
+            // Update Row 1 animal indicators (easy finds)
             UpdateAnimalIndicator("Kangaroo", kangarooIcon, kangarooLabel);
             UpdateAnimalIndicator("Emu", emuIcon, emuLabel);
             UpdateAnimalIndicator("Echidna", echidnaIcon, echidnaLabel);
             UpdateAnimalIndicator("Tasmanian Devil", devilIcon, devilLabel);
+            
+            // Update Row 2 animal indicators (hard finds)
+            UpdateAnimalIndicator("Koala", koalaIcon, koalaLabel);
+            UpdateAnimalIndicator("Frillneck Lizard", frillneckIcon, frillneckLabel);
+            UpdateAnimalIndicator("Platypus", platypusIcon, platypusLabel);
         }
 
         /// <summary>
@@ -505,7 +528,7 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Gets the icon element for a given animal name
+        /// Gets the icon element for a given animal name (updated for 7 animals)
         /// </summary>
         private VisualElement GetIconForAnimal(string animalName)
         {
@@ -515,13 +538,15 @@ namespace RelaxingDrive.UI
                 case "Emu": return emuIcon;
                 case "Echidna": return echidnaIcon;
                 case "Tasmanian Devil": return devilIcon;
+                case "Koala": return koalaIcon;
+                case "Frillneck Lizard": return frillneckIcon;
+                case "Platypus": return platypusIcon;
                 default: return null;
             }
         }
 
         /// <summary>
         /// Pulses an icon to draw attention (for newly discovered animals)
-        /// Unity UI Toolkit doesn't support CSS @keyframes, so we handle it via code.
         /// </summary>
         private IEnumerator PulseIcon(VisualElement icon)
         {

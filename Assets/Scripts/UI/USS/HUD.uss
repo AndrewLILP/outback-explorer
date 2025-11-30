@@ -1,4 +1,5 @@
 /* HUD.uss - Complete Stylesheet for Game HUD */
+/* Sprint 5: Updated for 7 animals with 2-row grid layout */
 
 /* ===================================
    MAIN HUD CONTAINER
@@ -58,7 +59,7 @@
     padding: 15px 20px;
     border-width: 2px;
     border-color: rgba(100, 200, 100, 0.4);
-    min-width: 200px;
+    min-width: 280px; /* Increased from 200px to fit 2 rows */
 }
 
 .progress-text {
@@ -70,15 +71,21 @@
 }
 
 .animal-icons {
-    flex-direction: row;
-    justify-content: space-around;
+    flex-direction: column; /* Stack rows vertically */
     align-items: center;
+}
+
+.animal-row {
+    flex-direction: row; /* Icons in each row are horizontal */
+    justify-content: center;
+    align-items: center;
+    margin: 5px 0; /* Spacing between rows */
 }
 
 .animal-container {
     flex-direction: column;
     align-items: center;
-    margin: 0 5px;
+    margin: 0 8px; /* Slightly increased spacing between icons */
 }
 
 .animal-icon {
@@ -100,28 +107,54 @@
     border-color: rgba(255, 255, 255, 0.6);
 }
 
-/* Animal-specific colors when discovered */
+/* ===================================
+   ANIMAL-SPECIFIC COLORS (DISCOVERED STATE)
+   =================================== */
+
+/* Row 1 - Easy Finds */
 .animal-icon.kangaroo.discovered {
-    background-color: rgb(150, 100, 50);
+    background-color: rgb(150, 100, 50); /* Brown */
 }
 
 .animal-icon.emu.discovered {
-    background-color: rgb(80, 100, 120);
+    background-color: rgb(80, 100, 120); /* Blue-grey */
 }
 
 .animal-icon.echidna.discovered {
-    background-color: rgb(120, 90, 70);
+    background-color: rgb(120, 90, 70); /* Brown-grey */
 }
 
 .animal-icon.devil.discovered {
-    background-color: rgb(50, 50, 50);
+    background-color: rgb(50, 50, 50); /* Dark grey/black */
 }
 
+/* Row 2 - Hard Finds */
+.animal-icon.koala.discovered {
+    background-color: rgb(120, 120, 130); /* Grey/silver */
+}
+
+.animal-icon.frillneck.discovered {
+    background-color: rgb(180, 80, 40); /* Orange-red */
+}
+
+.animal-icon.platypus.discovered {
+    background-color: rgb(70, 90, 100); /* Brown-blue */
+}
+
+/* ===================================
+   ANIMAL LABELS & EMOJIS
+   =================================== */
 .animal-label {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
+}
+
+.animal-emoji {
+    font-size: 18px;
+    -unity-text-align: middle-center;
+    margin-top: 3px;
 }
 
 /* ===================================
