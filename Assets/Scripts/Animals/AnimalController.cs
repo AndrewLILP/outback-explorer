@@ -1,6 +1,7 @@
 ﻿// AnimalController.cs
 // Detects when player is near this animal and triggers discovery
 // Attached to each animal GameObject in the scene
+// UPDATED: Now detects both driving AND walking player states
 
 using UnityEngine;
 using RelaxingDrive.UI;
@@ -9,6 +10,7 @@ namespace RelaxingDrive.Animals
 {
     /// <summary>
     /// Detects player proximity and triggers animal discovery.
+    /// Works with both driving (car) and walking (on foot) player states.
     /// Attach this component to each animal GameObject.
     /// </summary>
     [RequireComponent(typeof(Collider))]
@@ -19,11 +21,15 @@ namespace RelaxingDrive.Animals
         [SerializeField] private AnimalData animalData;
 
         [Header("Detection Settings")]
-        [Tooltip("Tag of the player GameObject (default: 'Player')")]
-        [SerializeField] private string playerTag = "Player";
-
         [Tooltip("How often to check for player proximity (in seconds)")]
         [SerializeField] private float detectionInterval = 0.5f;
+
+        [Header("Player References")]
+        [Tooltip("Reference to the car GameObject (AuStang)")]
+        [SerializeField] private GameObject carObject;
+        
+        [Tooltip("Reference to the walking player GameObject (PlayerWalking)")]
+        [SerializeField] private GameObject walkingPlayerObject;
 
         [Header("Debug Visualization")]
         [Tooltip("Show detection range in Scene view")]
@@ -35,7 +41,7 @@ namespace RelaxingDrive.Animals
         [SerializeField] private bool showDebugMessages = true;
 
         // Internal state
-        private Transform playerTransform;
+        private Transform activePlayerTransform;
         private bool hasBeenDiscovered = false;
         private bool playerInRange = false;
         private AnimalInfoUI animalInfoUI;
@@ -50,8 +56,11 @@ namespace RelaxingDrive.Animals
                 return;
             }
 
-            // Find player
-            FindPlayer();
+            // Find player objects if not assigned
+            if (carObject == null || walkingPlayerObject == null)
+            {
+                FindPlayerObjects();
+            }
 
             // Find AnimalInfoUI
             animalInfoUI = FindFirstObjectByType<AnimalInfoUI>();
@@ -74,24 +83,76 @@ namespace RelaxingDrive.Animals
         }
 
         /// <summary>
-        /// Finds the player GameObject in the scene.
+        /// Finds the car and walking player GameObjects in the scene.
         /// </summary>
-        private void FindPlayer()
+        private void FindPlayerObjects()
         {
-            GameObject player = GameObject.FindGameObjectWithTag(playerTag);
-
-            if (player != null)
+            // Try to find car by name (AuStang)
+            if (carObject == null)
             {
-                playerTransform = player.transform;
-                if (showDebugMessages)
+                carObject = GameObject.Find("AuStang");
+                if (carObject != null && showDebugMessages)
                 {
-                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found player at {player.name}");
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found car object: {carObject.name}");
                 }
             }
-            else
+
+            // Try to find walking player by name (PlayerWalking)
+            if (walkingPlayerObject == null)
             {
-                Debug.LogWarning($"AnimalController ({animalData.AnimalName}): Could not find GameObject with tag '{playerTag}'");
+                walkingPlayerObject = GameObject.Find("PlayerWalking");
+                if (walkingPlayerObject != null && showDebugMessages)
+                {
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found walking player object: {walkingPlayerObject.name}");
+                }
             }
+
+            // Fallback: try to find by tag
+            if (carObject == null || walkingPlayerObject == null)
+            {
+                GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
+                foreach (GameObject obj in playerObjects)
+                {
+                    if (obj.name.Contains("AuStang") || obj.name.Contains("Car"))
+                    {
+                        carObject = obj;
+                    }
+                    else if (obj.name.Contains("Walking") || obj.name.Contains("Player"))
+                    {
+                        walkingPlayerObject = obj;
+                    }
+                }
+            }
+
+            // Log warnings if still not found
+            if (carObject == null)
+            {
+                Debug.LogWarning($"AnimalController ({animalData.AnimalName}): Could not find car GameObject!");
+            }
+            if (walkingPlayerObject == null)
+            {
+                Debug.LogWarning($"AnimalController ({animalData.AnimalName}): Could not find walking player GameObject!");
+            }
+        }
+
+        /// <summary>
+        /// Gets the currently active player transform (car or walking player).
+        /// </summary>
+        private Transform GetActivePlayerTransform()
+        {
+            // Check car first (if it exists and is active)
+            if (carObject != null && carObject.activeInHierarchy)
+            {
+                return carObject.transform;
+            }
+
+            // Check walking player (if it exists and is active)
+            if (walkingPlayerObject != null && walkingPlayerObject.activeInHierarchy)
+            {
+                return walkingPlayerObject.transform;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -100,15 +161,18 @@ namespace RelaxingDrive.Animals
         /// </summary>
         private void CheckPlayerProximity()
         {
-            // If player not found yet, try to find them
-            if (playerTransform == null)
+            // Get the currently active player (car or walking)
+            activePlayerTransform = GetActivePlayerTransform();
+
+            // If no player found, try to find them again
+            if (activePlayerTransform == null)
             {
-                FindPlayer();
+                FindPlayerObjects();
                 return;
             }
 
             // Calculate distance to player
-            float distance = Vector3.Distance(transform.position, playerTransform.position);
+            float distance = Vector3.Distance(transform.position, activePlayerTransform.position);
 
             // Check if player entered range
             if (distance <= animalData.DiscoveryRange)
@@ -120,7 +184,8 @@ namespace RelaxingDrive.Animals
 
                     if (showDebugMessages)
                     {
-                        Debug.Log($"AnimalController ({animalData.AnimalName}): Player entered range (distance: {distance:F1}m)");
+                        string playerMode = activePlayerTransform == carObject?.transform ? "DRIVING" : "WALKING";
+                        Debug.Log($"AnimalController ({animalData.AnimalName}): Player entered range ({playerMode}) (distance: {distance:F1}m)");
                     }
 
                     TriggerDiscovery();
@@ -222,14 +287,14 @@ namespace RelaxingDrive.Animals
             Gizmos.DrawWireSphere(transform.position, animalData.DiscoveryRange);
 
             // Draw a line to player if in range (during play mode)
-            if (Application.isPlaying && playerTransform != null)
+            if (Application.isPlaying && activePlayerTransform != null)
             {
-                float distance = Vector3.Distance(transform.position, playerTransform.position);
+                float distance = Vector3.Distance(transform.position, activePlayerTransform.position);
 
                 if (distance <= animalData.DiscoveryRange)
                 {
                     Gizmos.color = Color.green;
-                    Gizmos.DrawLine(transform.position, playerTransform.position);
+                    Gizmos.DrawLine(transform.position, activePlayerTransform.position);
                 }
             }
         }

@@ -2567,8 +2567,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalData: {fileID: 11400000, guid: d93186d55b81d5740bb9b6ac6c4b5782, type: 2}
-  playerTag: Player
   detectionInterval: 0.5
+  carObject: {fileID: 0}
+  walkingPlayerObject: {fileID: 0}
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
   showDebugMessages: 1
@@ -5528,8 +5529,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalData: {fileID: 11400000, guid: a4a0ef51be28de1458085e58019da34a, type: 2}
-  playerTag: Player
   detectionInterval: 0.5
+  carObject: {fileID: 0}
+  walkingPlayerObject: {fileID: 0}
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
   showDebugMessages: 1
@@ -9757,8 +9759,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalData: {fileID: 11400000, guid: d93186d55b81d5740bb9b6ac6c4b5782, type: 2}
-  playerTag: Player
   detectionInterval: 0.5
+  carObject: {fileID: 0}
+  walkingPlayerObject: {fileID: 0}
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
   showDebugMessages: 1
@@ -18662,7 +18665,7 @@ Transform:
   m_GameObject: {fileID: 1477660566}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.58, y: 0, z: 0.028}
+  m_LocalPosition: {x: 0, y: 1.72, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -28284,8 +28287,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalData: {fileID: 11400000, guid: dd1729dbde51b6541929161f655c1901, type: 2}
-  playerTag: Player
   detectionInterval: 0.5
+  carObject: {fileID: 0}
+  walkingPlayerObject: {fileID: 0}
   showDetectionGizmo: 1
   gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
   showDebugMessages: 1
