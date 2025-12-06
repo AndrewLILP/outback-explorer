@@ -1,16 +1,18 @@
 ﻿// AnimalController.cs
 // Detects when player is near this animal and triggers discovery
 // Attached to each animal GameObject in the scene
-// UPDATED: Now detects both driving AND walking player states
+// UPDATED: Now uses PlayerStateManager to detect correct player position (car vs walking)
 
 using UnityEngine;
 using RelaxingDrive.UI;
+using RelaxingDrive.Player;
 
 namespace RelaxingDrive.Animals
 {
     /// <summary>
     /// Detects player proximity and triggers animal discovery.
     /// Works with both driving (car) and walking (on foot) player states.
+    /// Uses PlayerStateManager to determine which player transform to track.
     /// Attach this component to each animal GameObject.
     /// </summary>
     [RequireComponent(typeof(Collider))]
@@ -45,6 +47,7 @@ namespace RelaxingDrive.Animals
         private bool hasBeenDiscovered = false;
         private bool playerInRange = false;
         private AnimalInfoUI animalInfoUI;
+        private PlayerStateManager playerStateManager;
 
         private void Start()
         {
@@ -54,6 +57,13 @@ namespace RelaxingDrive.Animals
                 Debug.LogError($"AnimalController on {gameObject.name}: AnimalData is not assigned!", this);
                 enabled = false;
                 return;
+            }
+
+            // Find PlayerStateManager
+            playerStateManager = PlayerStateManager.Instance;
+            if (playerStateManager == null)
+            {
+                Debug.LogError($"AnimalController ({animalData.AnimalName}): Could not find PlayerStateManager! Make sure it exists in the scene!");
             }
 
             // Find player objects if not assigned
@@ -87,40 +97,44 @@ namespace RelaxingDrive.Animals
         /// </summary>
         private void FindPlayerObjects()
         {
-            // Try to find car by name (AuStang)
+            // Get references from PlayerStateManager if available
+            if (playerStateManager != null)
+            {
+                if (carObject == null && playerStateManager.CarGameObject != null)
+                {
+                    carObject = playerStateManager.CarGameObject;
+                    if (showDebugMessages)
+                    {
+                        Debug.Log($"AnimalController ({animalData.AnimalName}): Got car from PlayerStateManager: {carObject.name}");
+                    }
+                }
+
+                if (walkingPlayerObject == null && playerStateManager.PlayerCharacter != null)
+                {
+                    walkingPlayerObject = playerStateManager.PlayerCharacter;
+                    if (showDebugMessages)
+                    {
+                        Debug.Log($"AnimalController ({animalData.AnimalName}): Got walking player from PlayerStateManager: {walkingPlayerObject.name}");
+                    }
+                }
+            }
+
+            // Fallback: Try to find by name
             if (carObject == null)
             {
                 carObject = GameObject.Find("AuStang");
                 if (carObject != null && showDebugMessages)
                 {
-                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found car object: {carObject.name}");
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found car object by name: {carObject.name}");
                 }
             }
 
-            // Try to find walking player by name (PlayerWalking)
             if (walkingPlayerObject == null)
             {
                 walkingPlayerObject = GameObject.Find("PlayerWalking");
                 if (walkingPlayerObject != null && showDebugMessages)
                 {
-                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found walking player object: {walkingPlayerObject.name}");
-                }
-            }
-
-            // Fallback: try to find by tag
-            if (carObject == null || walkingPlayerObject == null)
-            {
-                GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
-                foreach (GameObject obj in playerObjects)
-                {
-                    if (obj.name.Contains("AuStang") || obj.name.Contains("Car"))
-                    {
-                        carObject = obj;
-                    }
-                    else if (obj.name.Contains("Walking") || obj.name.Contains("Player"))
-                    {
-                        walkingPlayerObject = obj;
-                    }
+                    Debug.Log($"AnimalController ({animalData.AnimalName}): Found walking player object by name: {walkingPlayerObject.name}");
                 }
             }
 
@@ -136,20 +150,47 @@ namespace RelaxingDrive.Animals
         }
 
         /// <summary>
-        /// Gets the currently active player transform (car or walking player).
+        /// Gets the currently active player transform based on PlayerStateManager.
+        /// FIXED: Now checks PlayerStateManager.IsDriving instead of GameObject.activeInHierarchy
+        /// because the car stays active (just frozen) when walking.
         /// </summary>
         private Transform GetActivePlayerTransform()
         {
-            // Check car first (if it exists and is active)
-            if (carObject != null && carObject.activeInHierarchy)
+            // Use PlayerStateManager to determine which player is active
+            if (playerStateManager != null)
             {
-                return carObject.transform;
+                if (playerStateManager.IsDriving)
+                {
+                    // Player is driving - use car transform
+                    if (carObject != null)
+                    {
+                        return carObject.transform;
+                    }
+                }
+                else if (playerStateManager.IsOnFoot)
+                {
+                    // Player is walking - use walking player transform
+                    if (walkingPlayerObject != null)
+                    {
+                        return walkingPlayerObject.transform;
+                    }
+                }
             }
-
-            // Check walking player (if it exists and is active)
-            if (walkingPlayerObject != null && walkingPlayerObject.activeInHierarchy)
+            else
             {
-                return walkingPlayerObject.transform;
+                // Fallback to old behavior if PlayerStateManager not found
+                Debug.LogWarning($"AnimalController ({animalData.AnimalName}): PlayerStateManager is null! Using fallback detection.");
+                
+                // Check which GameObject is active (this will fail if car stays visible)
+                if (walkingPlayerObject != null && walkingPlayerObject.activeInHierarchy)
+                {
+                    return walkingPlayerObject.transform;
+                }
+                
+                if (carObject != null && carObject.activeInHierarchy)
+                {
+                    return carObject.transform;
+                }
             }
 
             return null;
@@ -184,7 +225,7 @@ namespace RelaxingDrive.Animals
 
                     if (showDebugMessages)
                     {
-                        string playerMode = activePlayerTransform == carObject?.transform ? "DRIVING" : "WALKING";
+                        string playerMode = (playerStateManager != null && playerStateManager.IsDriving) ? "DRIVING" : "WALKING";
                         Debug.Log($"AnimalController ({animalData.AnimalName}): Player entered range ({playerMode}) (distance: {distance:F1}m)");
                     }
 

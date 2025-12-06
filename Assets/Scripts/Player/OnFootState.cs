@@ -9,7 +9,7 @@ namespace RelaxingDrive.Player
     /// Handles character controller movement and interaction detection.
     /// Shows "Press E to Enter Car" prompt when near car.
     /// 
-    /// ULTRA-DEBUG VERSION - Logs every single frame to diagnose input issue
+    /// FIXED VERSION - Car stays visible and frozen, not disabled
     /// </summary>
     public class OnFootState : PlayerState
     {
@@ -26,11 +26,6 @@ namespace RelaxingDrive.Player
         // Car interaction
         private float carInteractionRange = 3f;
         private bool isNearCar = false;
-
-        // Debug
-        private int frameCount = 0;
-        private float logInterval = 0.5f; // Log every 0.5 seconds
-        private float lastLogTime = 0f;
 
         public OnFootState(PlayerStateManager manager) : base(manager) { }
 
@@ -63,7 +58,7 @@ namespace RelaxingDrive.Player
                 Debug.LogWarning("[OnFootState] InteractionPromptUI not found in scene!");
             }
 
-            // Position player next to car
+            // Position player next to car (right side for Australian driving)
             Vector3 exitPosition = stateManager.CarGameObject.transform.position +
                                   stateManager.CarGameObject.transform.right * stateManager.ExitCarOffset.x;
             stateManager.PlayerCharacter.transform.position = exitPosition;
@@ -74,11 +69,29 @@ namespace RelaxingDrive.Player
             characterController.enabled = true;
             Debug.Log($"[OnFootState] Player active: {stateManager.PlayerCharacter.activeSelf}, CharController enabled: {characterController.enabled}");
 
-            // Disable car
-            stateManager.CarGameObject.SetActive(false);
-            Debug.Log($"[OnFootState] Car disabled: {!stateManager.CarGameObject.activeSelf}");
+            // KEEP CAR VISIBLE - Just freeze it in place
+            // 1. Freeze car physics (make Rigidbody kinematic)
+            Rigidbody carRigidbody = stateManager.CarGameObject.GetComponent<Rigidbody>();
+            if (carRigidbody != null)
+            {
+                carRigidbody.isKinematic = true;
+                carRigidbody.linearVelocity = Vector3.zero;
+                carRigidbody.angularVelocity = Vector3.zero;
+                Debug.Log("[OnFootState] Car Rigidbody set to kinematic - physics frozen");
+            }
 
-            // Update camera
+            // 2. Disable car cameras (children of car GameObject)
+            Camera[] carCameras = stateManager.CarGameObject.GetComponentsInChildren<Camera>();
+            foreach (Camera cam in carCameras)
+            {
+                cam.enabled = false;
+                Debug.Log($"[OnFootState] Disabled car camera: {cam.gameObject.name}");
+            }
+
+            // Car GameObject stays ACTIVE and VISIBLE
+            Debug.Log($"[OnFootState] Car remains visible at position: {stateManager.CarGameObject.transform.position}");
+
+            // Update camera to follow player
             if (stateManager.FollowCamera != null)
             {
                 stateManager.FollowCamera.SetTarget(stateManager.PlayerCharacter.transform);
@@ -91,21 +104,10 @@ namespace RelaxingDrive.Player
             }
 
             Debug.Log("[OnFootState] Player exited car - walking mode active");
-            Debug.Log("[OnFootState] ⚡ UPDATE LOOP STARTING - Watch for input logs!");
         }
 
         public override void Update()
         {
-            frameCount++;
-            
-            // Log periodically to show Update is being called
-            if (Time.time - lastLogTime > logInterval)
-            {
-                Debug.Log($"[OnFootState] Update() called {frameCount} times. Still in OnFoot state.");
-                lastLogTime = Time.time;
-                frameCount = 0;
-            }
-
             HandleMovement();
             CheckCarProximity();
             HandleCarInteraction();
@@ -113,26 +115,9 @@ namespace RelaxingDrive.Player
 
         private void HandleMovement()
         {
-            // Get input - LOG ALWAYS, even if zero
+            // Get input
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
-
-            // ALWAYS log input values (even zeros) for first 5 seconds
-            if (Time.time < 5f || horizontal != 0 || vertical != 0)
-            {
-                Debug.Log($"[OnFootState] RAW INPUT → H: {horizontal:F3}, V: {vertical:F3}");
-            }
-
-            // Also check raw key states
-            bool wPressed = Input.GetKey(KeyCode.W);
-            bool aPressed = Input.GetKey(KeyCode.A);
-            bool sPressed = Input.GetKey(KeyCode.S);
-            bool dPressed = Input.GetKey(KeyCode.D);
-
-            if (wPressed || aPressed || sPressed || dPressed)
-            {
-                Debug.Log($"[OnFootState] KEYS → W:{wPressed} A:{aPressed} S:{sPressed} D:{dPressed}");
-            }
 
             // Get camera reference
             Camera mainCamera = Camera.main;
@@ -157,8 +142,6 @@ namespace RelaxingDrive.Player
 
             if (moveDirection.magnitude >= 0.1f)
             {
-                Debug.Log($"[OnFootState] ✅ MOVING! Direction: {moveDirection}, Magnitude: {moveDirection.magnitude:F3}");
-
                 // Rotate player to face movement direction
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
                 stateManager.PlayerCharacter.transform.rotation =
@@ -169,9 +152,6 @@ namespace RelaxingDrive.Player
                 // Move player
                 Vector3 movement = moveDirection * moveSpeed * Time.deltaTime;
                 characterController.Move(movement);
-
-                Debug.Log($"[OnFootState] CharacterController.Move({movement}) called");
-                Debug.Log($"[OnFootState] Player position: {stateManager.PlayerCharacter.transform.position}");
             }
 
             // Apply gravity
