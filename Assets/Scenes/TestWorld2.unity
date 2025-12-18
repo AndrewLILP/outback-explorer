@@ -14288,7 +14288,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 375.8
+      value: 374.71
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.y
@@ -15889,7 +15889,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1051251935}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -31845,6 +31845,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: zone_01Zone
       objectReference: {fileID: 0}
+    - target: {fileID: 8912761540449122508, guid: 96b8ccaf927f25c40bd0897cc2ac5ffe, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -34347,6 +34351,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: zone_02
       objectReference: {fileID: 0}
+    - target: {fileID: 8912761540449122508, guid: 96b8ccaf927f25c40bd0897cc2ac5ffe, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -35568,7 +35576,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2101337219}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
