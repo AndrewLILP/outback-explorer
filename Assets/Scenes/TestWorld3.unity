@@ -14328,7 +14328,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalRotation.x
@@ -14336,7 +14336,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalRotation.z
@@ -14348,7 +14348,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -15670,6 +15670,10 @@ PrefabInstance:
     - target: {fileID: 526950302610176827, guid: 13625abb93c45f0428fd6ac89552107b, type: 3}
       propertyPath: m_Name
       value: House3White
+      objectReference: {fileID: 0}
+    - target: {fileID: 6578947058782984652, guid: 13625abb93c45f0428fd6ac89552107b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.78
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27718,7 +27722,7 @@ Transform:
   m_GameObject: {fileID: 1669837357}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -483.486, y: -42.433285, z: -221.46649}
+  m_LocalPosition: {x: -483.486, y: -42.4, z: -221.46649}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -32407,6 +32411,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2376999609653822688, guid: dbe9a18f4342024408bc77a4da299da6, type: 3}
   m_PrefabInstance: {fileID: 1908754971}
   m_PrefabAsset: {fileID: 0}
+--- !u!218 &1909378272 stripped
+Terrain:
+  m_CorrespondingSourceObject: {fileID: 5944623080567610274, guid: 1d5daee3ac5d3b341bee5cddf6400523, type: 3}
+  m_PrefabInstance: {fileID: 5944623082105369876}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1919433457
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36701,7 +36710,7 @@ PrefabInstance:
     - target: {fileID: 5296501292725753401, guid: a0dd8b93de34252428582a29b6374e58, type: 3}
       propertyPath: terrain
       value: 
-      objectReference: {fileID: 57719818}
+      objectReference: {fileID: 1909378272}
     - target: {fileID: 5296501292725753401, guid: a0dd8b93de34252428582a29b6374e58, type: 3}
       propertyPath: roadMesh
       value: 
