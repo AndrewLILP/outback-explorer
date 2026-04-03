@@ -112,6 +112,13 @@ Assets/Snow mountain tracks/
 # PolyStang Car Asset (large models and textures)
 Assets/PolyStang/
 
+# UBS House 32
+Assets/UBS/
+
+# PC
+Assets/Standard Assets/
+
+
 # Large file types
 *.fbx
 *.obj
