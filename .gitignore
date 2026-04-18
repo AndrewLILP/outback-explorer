@@ -130,6 +130,9 @@ Assets/UBS/
 # PC
 Assets/Standard Assets/
 
+# Prefabs
+Assets/Prefabs/
+
 
 # Large file types
 *.fbx
