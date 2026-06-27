@@ -1,5 +1,6 @@
 // ActivatableObject.cs
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using RelaxingDrive.Core;
 
@@ -60,22 +61,43 @@ namespace RelaxingDrive.World
             ScaleUp,      // Scales from small to normal
             FadeAndScale  // Both fade and scale
         }
+private Dictionary<Material, float> originalAlphas = new Dictionary<Material, float>();
 
-        private void Awake()
+private void Awake()
+{
+    // Cache components
+    meshRenderers = GetComponentsInChildren<MeshRenderer>();
+    colliders = GetComponentsInChildren<Collider>();
+
+    // Cache each material's authored alpha so fades preserve relative transparency
+    // (e.g. semi-transparent glass windows vs fully opaque walls)
+    foreach (var renderer in meshRenderers)
+    {
+        if (renderer == null) continue;
+        foreach (var material in renderer.materials)
         {
-            // Cache components
-            meshRenderers = GetComponentsInChildren<MeshRenderer>();
-            colliders = GetComponentsInChildren<Collider>();
+            if (originalAlphas.ContainsKey(material))
+                continue;
 
-            // Start disabled
-            SetObjectVisibility(false);
+            float alpha = 1f;
+            if (material.HasProperty("_Color"))
+                alpha = material.color.a;
+            else if (material.HasProperty("_BaseColor"))
+                alpha = material.GetColor("_BaseColor").a;
 
-            // Validate building ID
-            if (string.IsNullOrEmpty(buildingID))
-            {
-                Debug.LogWarning($"{gameObject.name} has no Building ID! Save/load will not work for this object.");
-            }
+            originalAlphas[material] = alpha;
         }
+    }
+
+    // Start disabled
+    SetObjectVisibility(false);
+
+    // Validate building ID
+    if (string.IsNullOrEmpty(buildingID))
+    {
+        Debug.LogWarning($"{gameObject.name} has no Building ID! Save/load will not work for this object.");
+    }
+}
 
         private void OnEnable()
         {
@@ -361,56 +383,62 @@ namespace RelaxingDrive.World
                     collider.enabled = visible;
             }
         }
+/// <summary>
+/// Applies fade progress (0 = invisible, 1 = each material's authored alpha) across all materials.
+/// Multiplying by the cached original alpha means partially-transparent materials (e.g. glass)
+/// end the fade at their correct authored transparency, not forced fully opaque.
+/// Works with Standard shader and URP/Lit.
+/// </summary>
+private void SetObjectAlpha(float t)
+{
+    foreach (var renderer in meshRenderers)
+    {
+        if (renderer == null)
+            continue;
 
-        /// <summary>
-        /// Sets alpha of all materials (for fade effect).
-        /// Works with Standard shader and most transparent shaders.
-        /// </summary>
-        private void SetObjectAlpha(float alpha)
+        foreach (var material in renderer.materials)
         {
-            foreach (var renderer in meshRenderers)
+            float originalAlpha = originalAlphas.TryGetValue(material, out float cached) ? cached : 1f;
+            float alpha = Mathf.Clamp01(t) * originalAlpha;
+
+            if (material.HasProperty("_Color"))
             {
-                if (renderer == null)
-                    continue;
+                Color color = material.color;
+                color.a = alpha;
+                material.color = color;
 
-                foreach (var material in renderer.materials)
+                if (alpha < 1f)
                 {
-                    if (material.HasProperty("_Color"))
-                    {
-                        Color color = material.color;
-                        color.a = alpha;
-                        material.color = color;
-
-                        // Enable transparency rendering
-                        if (alpha < 1f)
-                        {
-                            material.SetFloat("_Mode", 3); // Transparent mode
-                            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                            material.SetInt("_ZWrite", 0);
-                            material.DisableKeyword("_ALPHATEST_ON");
-                            material.EnableKeyword("_ALPHABLEND_ON");
-                            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                            material.renderQueue = 3000;
-                        }
-                        else
-                        {
-                            // Back to opaque
-                            material.SetFloat("_Mode", 0);
-                            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-                            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-                            material.SetInt("_ZWrite", 1);
-                            material.DisableKeyword("_ALPHATEST_ON");
-                            material.DisableKeyword("_ALPHABLEND_ON");
-                            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                            material.renderQueue = -1;
-                        }
-                    }
+                    material.SetFloat("_Mode", 3);
+                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_ZWrite", 0);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.EnableKeyword("_ALPHABLEND_ON");
+                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                    material.renderQueue = 3000;
+                }
+                else
+                {
+                    material.SetFloat("_Mode", 0);
+                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+                    material.SetInt("_ZWrite", 1);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.DisableKeyword("_ALPHABLEND_ON");
+                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                    material.renderQueue = -1;
                 }
             }
+            else if (material.HasProperty("_BaseColor"))
+            {
+                Color color = material.GetColor("_BaseColor");
+                color.a = alpha;
+                material.SetColor("_BaseColor", color);
+            }
         }
-
-        // Editor helper - visualize in scene view
+    }
+}        // Editor helper - visualize in scene view
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = isActive ? Color.green : Color.yellow;

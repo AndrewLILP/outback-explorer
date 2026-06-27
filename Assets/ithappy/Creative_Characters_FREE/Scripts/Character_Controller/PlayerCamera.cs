@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Controller
+namespace ithappy.Animals_FREE
 {
     public abstract class PlayerCamera : MonoBehaviour
     {
@@ -9,6 +9,7 @@ namespace Controller
 
         private const float TARGET_DISTANCE = MAX_DISTANCE * 2f;
 
+        [SerializeField]
         protected Transform m_Player;
 
         [SerializeField, Range(0f, 1f)]
@@ -44,10 +45,6 @@ namespace Controller
             {
                 m_Target.transform.parent = m_Transform.parent;
             }
-        }
-
-        public void SetPlayer(Transform player) {
-            m_Player = player;
         }
 
         public virtual void SetInput(in Vector2 delta, float scroll)

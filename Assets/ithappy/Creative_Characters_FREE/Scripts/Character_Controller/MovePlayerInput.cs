@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace Controller
+namespace ithappy.Animals_FREE
 {
-    [RequireComponent(typeof(CharacterMover))]
+    [RequireComponent(typeof(CreatureMover))]
     public class MovePlayerInput : MonoBehaviour
     {
         [Header("Character")]
@@ -25,7 +25,7 @@ namespace Controller
         [SerializeField]
         private string m_MouseScroll = "Mouse ScrollWheel";
 
-        private CharacterMover m_Mover;
+        private CreatureMover m_Mover;
 
         private Vector2 m_Axis;
         private bool m_IsRun;
@@ -37,15 +37,7 @@ namespace Controller
 
         private void Awake()
         {
-            m_Mover = GetComponent<CharacterMover>();
-
-            if(m_Camera == null ) 
-            {
-                m_Camera = Camera.main == null ? null : Camera.main.GetComponent<PlayerCamera>();
-            }
-            if(m_Camera != null) {
-                m_Camera.SetPlayer(transform);
-            }
+            m_Mover = GetComponent<CreatureMover>();
         }
 
         private void Update()
@@ -65,7 +57,7 @@ namespace Controller
             m_Scroll = Input.GetAxis(m_MouseScroll);
         }
 
-        public void BindMover(CharacterMover mover)
+        public void BindMover(CreatureMover mover)
         {
             m_Mover = mover;
         }

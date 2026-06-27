@@ -40,7 +40,7 @@ namespace RelaxingDrive.World
         private void OnTriggerEnter(Collider other)
         {
             // Check if the player entered (assuming player has "Player" tag)
-            if (other.CompareTag("Player"))
+            if (other.transform.root.CompareTag("Player"))
             {
                 if (showDebugMessages)
                 {

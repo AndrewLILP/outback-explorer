@@ -103,6 +103,9 @@ InitTestScene*.unity*
 # Animal Assets (Australia Animals Pack)
 Assets/AustraliaAnimalsPackv1/
 
+Assets/ithappy/Animals_FREE.meta
+Assets/ithappy/Animals_FREE/
+
 # Rural Australia Environment Pack
 Assets/Pup Up Productions/
 
@@ -136,6 +139,8 @@ Assets/Standard Assets/
 
 # Prefabs
 Assets/Prefabs/
+
+Assets/ithappy/Creative_Characters_FREE/
 
 
 # Large file types
