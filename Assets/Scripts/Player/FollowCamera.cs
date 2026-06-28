@@ -30,6 +30,7 @@ namespace RelaxingDrive.Player
         [Header("Debug")]
         [SerializeField] private bool showDebugInfo = false;
 
+
         private void LateUpdate()
         {
             if (target == null)
