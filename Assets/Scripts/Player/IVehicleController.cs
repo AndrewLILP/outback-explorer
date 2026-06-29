@@ -19,5 +19,18 @@ namespace RelaxingDrive.Player
 
         /// <summary>The vehicle's Rigidbody, so states can freeze/unfreeze physics.</summary>
         Rigidbody Rigidbody { get; }
+
+        /// <summary>
+        /// True if this vehicle asset owns/drives its own dedicated camera rig
+        /// (e.g. RCC). False if it has no camera of its own and depends on
+        /// FollowCamera instead (e.g. PolyStang).
+        /// </summary>
+        bool UsesOwnCamera { get; }
+
+        /// <summary>
+        /// Activates/deactivates this vehicle's own camera rig. No-op for
+        /// adapters where UsesOwnCamera is false.
+        /// </summary>
+        void SetOwnCameraActive(bool active);
     }
 }

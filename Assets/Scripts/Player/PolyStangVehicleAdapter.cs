@@ -4,6 +4,8 @@ using PolyStang;
 
 namespace RelaxingDrive.Player
 {
+
+    
     /// <summary>
     /// Adapts PolyStang's CarController to the IVehicleController interface.
     /// Attach to the same GameObject as PolyStang's CarController (Itch Demo scene).
@@ -13,6 +15,9 @@ namespace RelaxingDrive.Player
     {
         private CarController carController;
         private Rigidbody rb;
+
+        public bool UsesOwnCamera => false;
+public void SetOwnCameraActive(bool active) { /* no-op */ }
 
         private void Awake()
         {

@@ -1,6 +1,7 @@
 // OnFootState.cs
 using UnityEngine;
 using RelaxingDrive.World;
+using StarterAssets;
 
 namespace RelaxingDrive.Player
 {
@@ -8,14 +9,20 @@ namespace RelaxingDrive.Player
     /// State when player is walking around (not in car).
     /// Handles character controller movement and interaction detection.
     /// Shows "Press E to Enter Car" prompt when near car.
-    /// 
-    /// FIXED VERSION - Car stays visible and frozen, not disabled
+    ///
+    /// Supports two walking-controller paths:
+    /// - Starter Assets ThirdPersonController (RCC/Steam scene) - that component
+    ///   owns its own movement, input, animation, and Cinemachine camera target.
+    ///   This state only handles car proximity/interaction and the camera handoff.
+    /// - Legacy hand-rolled CharacterController movement (PolyStang/Itch scene) -
+    ///   unchanged, drives movement itself and uses FollowCamera.
     /// </summary>
     public class OnFootState : PlayerState
     {
         private CharacterController characterController;
         private PlayerInteractionDetector interactionDetector;
         private UI.InteractionPromptUI interactionPrompt;
+        private bool usesExternalController;
 
         // Movement settings
         private float moveSpeed = 5f;
@@ -24,7 +31,9 @@ namespace RelaxingDrive.Player
         private Vector3 velocity;
 
         // Car interaction
-        private float carInteractionRange = 3f;
+        private float carInteractionRange = 5f; // was 3f - retuned for largest RCC vehicle (Truck/Pickup)
+                                                  // footprint; slightly generous for smaller cars (Coupe, F1)
+                                                  // but avoids the prompt feeling unresponsive near big vehicles
         private bool isNearCar = false;
 
         public OnFootState(PlayerStateManager manager) : base(manager) { }
@@ -33,15 +42,27 @@ namespace RelaxingDrive.Player
         {
             Debug.Log("[OnFootState] ========== ENTERING ON FOOT STATE ==========");
 
-            // Get or add CharacterController
+            // Detect which walking controller this scene's playerCharacter uses.
+            // Starter Assets' ThirdPersonController owns its own CharacterController,
+            // input, and animation - we just activate it. The legacy path (Itch/PolyStang)
+            // has none of that and needs the manual setup below.
+            usesExternalController = stateManager.PlayerCharacter.GetComponent<ThirdPersonController>() != null;
+
             characterController = stateManager.PlayerCharacter.GetComponent<CharacterController>();
             if (characterController == null)
             {
-                Debug.Log("[OnFootState] CharacterController not found - adding one");
-                characterController = stateManager.PlayerCharacter.AddComponent<CharacterController>();
-                characterController.height = 2f;
-                characterController.radius = 0.5f;
-                characterController.center = new Vector3(0f, 1f, 0f);
+                if (usesExternalController)
+                {
+                    Debug.LogError("[OnFootState] ThirdPersonController found but no CharacterController on the same GameObject - check the PlayerArmature prefab setup!");
+                }
+                else
+                {
+                    Debug.Log("[OnFootState] CharacterController not found - adding one");
+                    characterController = stateManager.PlayerCharacter.AddComponent<CharacterController>();
+                    characterController.height = 2f;
+                    characterController.radius = 0.5f;
+                    characterController.center = new Vector3(0f, 1f, 0f);
+                }
             }
             else
             {
@@ -91,8 +112,19 @@ namespace RelaxingDrive.Player
             // Car GameObject stays ACTIVE and VISIBLE
             Debug.Log($"[OnFootState] Car remains visible at position: {stateManager.CarGameObject.transform.position}");
 
-            // Update camera to follow player
-            if (stateManager.FollowCamera != null)
+            // Camera handoff: each side now owns its own camera in the RCC scene
+            // (RCC's rig while driving, Starter Assets' Cinemachine rig while on
+            // foot) - turn the vehicle's camera off here (no-op for PolyStang,
+            // which has none) and turn the walking camera on if this controller
+            // has one. Falls back to FollowCamera for the legacy path.
+            stateManager.VehicleController?.SetOwnCameraActive(false);
+
+            if (usesExternalController && stateManager.WalkingCameraObject != null)
+            {
+                stateManager.WalkingCameraObject.SetActive(true);
+                Debug.Log("[OnFootState] Activated walking controller's own camera (Cinemachine)");
+            }
+            else if (stateManager.FollowCamera != null)
             {
                 stateManager.FollowCamera.SetTarget(stateManager.PlayerCharacter.transform);
                 stateManager.FollowCamera.SetOffset(stateManager.WalkingCameraOffset);
@@ -100,7 +132,7 @@ namespace RelaxingDrive.Player
             }
             else
             {
-                Debug.LogWarning("[OnFootState] FollowCamera is NULL!");
+                Debug.LogWarning("[OnFootState] No walking camera available - neither WalkingCameraObject nor FollowCamera is assigned!");
             }
 
             Debug.Log("[OnFootState] Player exited car - walking mode active");
@@ -108,7 +140,14 @@ namespace RelaxingDrive.Player
 
         public override void Update()
         {
-            HandleMovement();
+            // Starter Assets' ThirdPersonController drives its own movement, gravity,
+            // jumping, and camera-target rotation in its own Update()/LateUpdate() -
+            // nothing for this state to do there. The legacy path still needs it.
+            if (!usesExternalController)
+            {
+                HandleMovement();
+            }
+
             CheckCarProximity();
             HandleCarInteraction();
         }
@@ -222,6 +261,12 @@ namespace RelaxingDrive.Player
             HideCarInteractionPrompt();
             characterController.enabled = false;
             stateManager.PlayerCharacter.SetActive(false);
+
+            if (usesExternalController && stateManager.WalkingCameraObject != null)
+            {
+                stateManager.WalkingCameraObject.SetActive(false);
+            }
+
             Debug.Log("[OnFootState] Player entered car - switching to driving mode");
         }
     }

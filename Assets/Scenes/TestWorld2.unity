@@ -14394,7 +14394,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 343302888}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 727829393625461516, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1592142962}
   m_SourcePrefab: {fileID: 100100000, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
 --- !u!1001 &962956444
 PrefabInstance:
@@ -26226,6 +26229,18 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 727829393625461516, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
   m_PrefabInstance: {fileID: 956911312}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1592142962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592142953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2ca4479d6e04fe47b60c760ba67ba97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.Player.PolyStangVehicleAdapter
 --- !u!1 &1592793062
 GameObject:
   m_ObjectHideFlags: 0

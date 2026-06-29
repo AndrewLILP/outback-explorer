@@ -23,7 +23,9 @@ namespace RelaxingDrive.Player
         [Tooltip("Leave empty for RCC scenes - resolved automatically once RCC_Spawner spawns the car. Assign directly for PolyStang scenes.")]
         [SerializeField] private GameObject carGameObject;
         [SerializeField] private GameObject playerCharacter;
-        [SerializeField] private FollowCamera followCamera; // Can leave empty - will auto-find
+        [SerializeField] private FollowCamera followCamera; // PolyStang/Itch scene only - can leave empty in RCC scene
+        [Tooltip("Starter Assets' MainCamera (Camera + CinemachineBrain), used only when the walking controller owns its own camera. Leave empty in scenes without it (e.g. Itch).")]
+        [SerializeField] private GameObject walkingCameraObject;
 
         [Header("Camera Settings")]
         [SerializeField] private Vector3 drivingCameraOffset = new Vector3(0f, 3f, -7f);
@@ -46,6 +48,7 @@ namespace RelaxingDrive.Player
         public GameObject CarGameObject => carGameObject;
         public GameObject PlayerCharacter => playerCharacter;
         public FollowCamera FollowCamera => followCamera;
+        public GameObject WalkingCameraObject => walkingCameraObject;
         public IVehicleController VehicleController => vehicleController;
         public Vector3 DrivingCameraOffset => drivingCameraOffset;
         public Vector3 WalkingCameraOffset => walkingCameraOffset;
@@ -74,10 +77,12 @@ namespace RelaxingDrive.Player
                 }
                 else
                 {
-                    // Not fatal: scenes without a walking controller yet (like this one)
-                    // don't need FollowCamera until OnFootState is actually reachable.
-                    Debug.LogWarning("[PlayerStateManager] FollowCamera not found in scene - " +
-                        "OnFoot transitions will be unavailable until both a walking controller and FollowCamera are added.");
+                    // Not fatal: RCC scenes don't need FollowCamera at all now that both
+                    // sides own their own camera (RCC's rig while driving, Starter Assets'
+                    // Cinemachine rig while on foot). Only PolyStang/Itch-style scenes
+                    // depend on FollowCamera being present.
+                    Debug.Log("[PlayerStateManager] FollowCamera not found in scene - " +
+                        "fine if this scene's vehicle and walking controller each own their own camera.");
                 }
             }
 

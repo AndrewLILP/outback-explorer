@@ -47,7 +47,16 @@ namespace RelaxingDrive.Player
                 Debug.Log("[DrivingState] Player character disabled");
             }
 
-            if (stateManager.FollowCamera != null)
+            // Camera handoff: RCC owns its own camera rig, so activate that and
+            // leave FollowCamera untouched (it isn't used in this scene at all).
+            // PolyStang has no camera of its own, so FollowCamera does the work,
+            // same as before.
+            if (vehicleController != null && vehicleController.UsesOwnCamera)
+            {
+                vehicleController.SetOwnCameraActive(true);
+                Debug.Log("[DrivingState] Activated vehicle's own camera rig");
+            }
+            else if (stateManager.FollowCamera != null)
             {
                 stateManager.FollowCamera.SetTarget(stateManager.CarGameObject.transform);
                 stateManager.FollowCamera.SetOffset(stateManager.DrivingCameraOffset);

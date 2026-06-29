@@ -25,5 +25,12 @@ namespace RelaxingDrive.Player
         public float Speed => rccController.speed; // RCC already exposes km/h
 
         public Rigidbody Rigidbody => rccController.Rigid;
+
+        public bool UsesOwnCamera => true;
+public void SetOwnCameraActive(bool active)
+{
+    if (RCC_SceneManager.Instance != null && RCC_SceneManager.Instance.activePlayerCamera != null)
+        RCC_SceneManager.Instance.activePlayerCamera.gameObject.SetActive(active);
+}
     }
 }
