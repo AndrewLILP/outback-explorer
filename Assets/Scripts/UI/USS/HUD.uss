@@ -1,179 +1,209 @@
-/* HUD.uss - Complete Stylesheet for Game HUD */
-/* Sprint 5: Updated for 7 animals with 2-row grid layout */
+/* HUD.uss
+   Warm "field journal" palette - replaces the old dark sci-fi blue/green look.
+   Shared tones used across HUD, AnimalInfoPanel and InteractionPrompt for a
+   consistent road-trip feel:
+   - Panel surface:  rgba(44, 38, 28, 0.88)  deep leather/coffee brown
+   - Panel border:   rgba(196, 164, 105, 0.55) brass/tan
+   - Primary text:   rgb(238, 230, 214)      cream
+   - Secondary text: rgba(196, 180, 150, 0.85) muted tan
+   - Rust accent:    rgb(196, 110, 58)       (kangaroo / discovered highlight)
+   - Olive accent:   rgb(122, 138, 84)       (frillneck / secondary highlight)
+*/
 
-/* ===================================
-   MAIN HUD CONTAINER
-   =================================== */
 .hud-container {
     width: 100%;
     height: 100%;
 }
 
 /* ===================================
-   SPEEDOMETER (Bottom Right)
+   SPEED COMPARISON (bottom-center, floats just above RCC's own dash)
    =================================== */
-.speedometer {
+.speed-panel {
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    translate: -50% 0;
+    align-items: center;
+}
+
+.speed-comparison-text {
+    background-color: rgba(44, 38, 28, 0.78);
+    border-radius: 999px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.5);
+    padding: 6px 18px;
+    font-size: 14px;
+    color: rgb(238, 230, 214);
+    -unity-text-align: middle-center;
+}
+
+/* ===================================
+   DISCOVERY WIDGET (bottom-left: pill + expandable stamp grid)
+   =================================== */
+.discovery-widget {
     position: absolute;
     bottom: 30px;
-    right: 30px;
-    background-color: rgba(20, 20, 30, 0.8);
-    border-radius: 15px;
-    padding: 15px 25px;
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.3);
+    left: 30px;
+    align-items: flex-start;
+}
+
+.discovery-pill {
+    flex-direction: row;
     align-items: center;
-    min-width: 120px;
+    background-color: rgba(44, 38, 28, 0.85);
+    border-radius: 999px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.55);
+    padding: 8px 16px;
+    margin: 0;
+    transition-duration: 0.15s;
 }
 
-.speed-value {
-    font-size: 48px;
-    color: rgb(100, 200, 255);
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
+.discovery-pill:hover {
+    border-color: rgba(196, 164, 105, 0.9);
+    scale: 1.03;
 }
 
-.speed-unit {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
-    -unity-text-align: middle-center;
-    margin-top: 5px;
+.discovery-pill:active {
+    scale: 0.97;
 }
 
-.speed-comparison {
-    font-size: 14px;
-    color: rgb(255, 200, 100);
-    -unity-text-align: middle-center;
-    margin-top: 8px;
-    font-style: italic;
+.discovery-dots {
+    flex-direction: row;
 }
 
-/* ===================================
-   ANIMAL DISCOVERY PROGRESS (Top Right)
-   =================================== */
-.discovery-progress {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    background-color: rgba(30, 40, 30, 0.85);
+.discovery-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.discovery-dot--empty {
+    background-color: rgba(196, 180, 150, 0.3);
+}
+
+.discovery-dot--filled {
+    background-color: rgb(196, 110, 58);
+}
+
+.discovery-count-label {
+    font-size: 13px;
+    color: rgb(238, 230, 214);
+    margin-left: 4px;
+    -unity-text-align: middle-left;
+}
+
+.discovery-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 360px;
+    background-color: rgba(44, 38, 28, 0.9);
     border-radius: 12px;
-    padding: 15px 20px;
-    border-width: 2px;
-    border-color: rgba(100, 200, 100, 0.4);
-    min-width: 280px; /* Increased from 200px to fit 2 rows */
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.55);
+    padding: 12px;
+    margin-bottom: 8px;
 }
 
-.progress-text {
-    font-size: 16px;
-    color: rgb(150, 255, 150);
+.stamp {
+    width: 64px;
+    align-items: center;
+    margin: 4px 6px;
+}
+
+.stamp-code {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    -unity-text-align: middle-center;
+    font-size: 13px;
     -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
-.animal-icons {
-    flex-direction: column; /* Stack rows vertically */
-    align-items: center;
+.stamp-name {
+    font-size: 10px;
+    color: rgba(196, 180, 150, 0.9);
+    -unity-text-align: upper-center;
+    white-space: normal;
 }
 
-.animal-row {
-    flex-direction: row; /* Icons in each row are horizontal */
-    justify-content: center;
-    align-items: center;
-    margin: 5px 0; /* Spacing between rows */
+/* Undiscovered - faint dashed-look outline (UI Toolkit has no dashed border,
+   so a thin low-contrast border approximates the "blank passport page" look) */
+.stamp.undiscovered .stamp-code {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+    border-color: rgba(196, 180, 150, 0.35);
+    color: rgba(196, 180, 150, 0.5);
 }
 
-.animal-container {
-    flex-direction: column;
-    align-items: center;
-    margin: 0 8px; /* Slightly increased spacing between icons */
-}
-
-.animal-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+/* Discovered - filled ink-stamp circle, slight rotation per species for a
+   hand-stamped feel */
+.stamp.discovered .stamp-code {
     border-width: 2px;
-    margin-bottom: 5px;
+    color: rgb(44, 38, 28);
 }
 
-/* Undiscovered state - greyed out */
-.animal-icon.undiscovered {
-    background-color: rgba(80, 80, 80, 0.5);
-    border-color: rgba(100, 100, 100, 0.3);
+.stamp.kangaroo.discovered .stamp-code {
+    background-color: rgb(196, 110, 58);
+    border-color: rgb(140, 75, 35);
+    rotate: -6deg;
 }
 
-/* Discovered state - colored */
-.animal-icon.discovered {
-    border-color: rgba(255, 255, 255, 0.6);
+.stamp.frillneck.discovered .stamp-code {
+    background-color: rgb(122, 138, 84);
+    border-color: rgb(85, 100, 55);
+    rotate: 5deg;
 }
 
-/* ===================================
-   ANIMAL-SPECIFIC COLORS (DISCOVERED STATE)
-   =================================== */
-
-/* Row 1 - Easy Finds */
-.animal-icon.kangaroo.discovered {
-    background-color: rgb(150, 100, 50); /* Brown */
+.stamp.emu.discovered .stamp-code {
+    background-color: rgb(180, 150, 90);
+    border-color: rgb(130, 105, 60);
+    rotate: -3deg;
 }
 
-.animal-icon.emu.discovered {
-    background-color: rgb(80, 100, 120); /* Blue-grey */
+.stamp.echidna.discovered .stamp-code {
+    background-color: rgb(140, 100, 70);
+    border-color: rgb(95, 65, 45);
+    rotate: 4deg;
 }
 
-.animal-icon.echidna.discovered {
-    background-color: rgb(120, 90, 70); /* Brown-grey */
+.stamp.devil.discovered .stamp-code {
+    background-color: rgb(90, 78, 70);
+    border-color: rgb(55, 46, 40);
+    rotate: -4deg;
 }
 
-.animal-icon.devil.discovered {
-    background-color: rgb(50, 50, 50); /* Dark grey/black */
+.stamp.koala.discovered .stamp-code {
+    background-color: rgb(150, 150, 140);
+    border-color: rgb(105, 105, 98);
+    rotate: 6deg;
 }
 
-/* Row 2 - Hard Finds */
-.animal-icon.koala.discovered {
-    background-color: rgb(120, 120, 130); /* Grey/silver */
-}
-
-.animal-icon.frillneck.discovered {
-    background-color: rgb(180, 80, 40); /* Orange-red */
-}
-
-.animal-icon.platypus.discovered {
-    background-color: rgb(70, 90, 100); /* Brown-blue */
+.stamp.platypus.discovered .stamp-code {
+    background-color: rgb(94, 124, 130); /* corrected to a teal-brown tone */
+    border-color: rgb(60, 85, 90);
+    rotate: -5deg;
 }
 
 /* ===================================
-   ANIMAL LABELS & EMOJIS
-   =================================== */
-.animal-label {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-}
-
-.animal-emoji {
-    font-size: 18px;
-    -unity-text-align: middle-center;
-    margin-top: 3px;
-}
-
-/* ===================================
-   MISSION INDICATOR (Top Left)
+   MISSION INDICATOR (top-left, unused in this slice)
    =================================== */
 .mission-indicator {
     position: absolute;
     top: 30px;
     left: 30px;
-    background-color: rgba(30, 30, 40, 0.9);
+    background-color: rgba(44, 38, 28, 0.85);
     border-radius: 10px;
     padding: 10px 20px;
     min-width: 200px;
-    display: none; /* Hidden by default */
+    display: none;
 }
 
 .mission-text {
     font-size: 16px;
-    color: rgb(255, 220, 150);
+    color: rgb(238, 230, 214);
 }
 
 /* ===================================
@@ -183,52 +213,51 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(20, 17, 12, 0.75);
     align-items: center;
     justify-content: center;
 }
 
 .pause-container {
-    background-color: rgba(30, 30, 40, 0.95);
-    border-radius: 20px;
+    background-color: rgba(44, 38, 28, 0.95);
+    border-radius: 16px;
     padding: 40px;
-    border-width: 3px;
-    border-color: rgba(255, 255, 255, 0.3);
-    min-width: 400px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.5);
+    min-width: 360px;
     align-items: center;
 }
 
 .pause-title {
-    font-size: 48px;
-    color: rgb(255, 220, 150);
+    font-size: 36px;
+    color: rgb(238, 230, 214);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .pause-button {
-    width: 300px;
-    height: 50px;
-    margin: 10px;
-    background-color: rgba(60, 80, 100, 0.8);
-    border-radius: 10px;
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.4);
-    color: rgb(255, 255, 255);
-    font-size: 20px;
-    -unity-font-style: bold;
-    transition-duration: 0.2s;
+    width: 280px;
+    height: 46px;
+    margin: 8px;
+    background-color: rgba(196, 110, 58, 0.25);
+    border-radius: 999px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.55);
+    color: rgb(238, 230, 214);
+    font-size: 16px;
+    transition-duration: 0.15s;
 }
 
 .pause-button:hover {
-    background-color: rgba(80, 120, 160, 0.9);
-    border-color: rgba(255, 255, 255, 0.7);
-    scale: 1.05;
+    background-color: rgba(196, 110, 58, 0.4);
+    border-color: rgba(196, 164, 105, 0.9);
+    scale: 1.03;
 }
 
 .pause-button:active {
-    background-color: rgba(100, 150, 200, 1);
-    scale: 0.98;
+    background-color: rgba(196, 110, 58, 0.55);
+    scale: 0.97;
 }
 
 /* ===================================
@@ -238,34 +267,34 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(20, 17, 12, 0.85);
     align-items: center;
     justify-content: center;
 }
 
 .instructions-title {
-    font-size: 36px;
-    color: rgb(255, 220, 150);
+    font-size: 28px;
+    color: rgb(238, 230, 214);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .instructions-content {
-    background-color: rgba(40, 40, 50, 0.9);
-    border-radius: 15px;
-    padding: 30px;
-    margin-bottom: 20px;
-    min-width: 400px;
+    background-color: rgba(30, 26, 19, 0.9);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    min-width: 340px;
 }
 
 .instruction-line {
-    font-size: 18px;
-    color: rgb(200, 200, 200);
-    margin: 8px 0;
+    font-size: 15px;
+    color: rgba(196, 180, 150, 0.9);
+    margin: 6px 0;
     -unity-text-align: middle-left;
 }
 
 .instruction-spacer {
-    height: 15px;
+    height: 12px;
 }

@@ -1,0 +1,29 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!--
+        No <Style> tag here on purpose - assign AnimalInfoPanel.uss to the
+        animalInfoStyleSheet field on this GameObject's AnimalInfoUI
+        component in the Inspector instead. (Avoids hand-typing a project://
+        GUID that only Unity's own UI Builder can generate correctly.)
+    -->
+    <ui:VisualElement name="animal-info-root" class="animal-panel animal-panel--hidden">
+        <ui:VisualElement name="animal-info-container" class="journal-card">
+            <ui:VisualElement name="animal-icon" class="journal-icon" />
+            <ui:VisualElement class="journal-body">
+                <ui:VisualElement class="journal-header-row">
+                    <ui:Label name="animal-name" text="Animal name" class="journal-name" />
+                    <ui:Label name="scientific-name" text="Scientific name" class="journal-sci-name" />
+                </ui:VisualElement>
+                <ui:Label name="fun-fact-value" text="Fun fact about the animal goes here." class="journal-fun-fact" />
+                <ui:VisualElement class="journal-meta-row">
+                    <ui:Label text="Habitat" class="journal-meta-label" />
+                    <ui:Label name="habitat-value" text="Habitat description" class="journal-meta-value" />
+                    <ui:Label text="Diet" class="journal-meta-label" />
+                    <ui:Label name="diet-value" text="Diet description" class="journal-meta-value" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="discovery-badge" class="journal-badge">
+                <ui:Label name="discovery-text" text="New discovery" class="journal-badge-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,7 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/USS/InteractionPrompt.uss?fileID=7433441132597879392&amp;guid=9192ca682208b5247a6ea29e5750c8d5&amp;type=3#InteractionPrompt" />
-    <ui:VisualElement name="InteractionPrompt" class="interaction-prompt">
-        <ui:Label name="InteractionIcon" text="[E]" class="interaction-icon" />
-        <ui:Label name="InteractionText" text="Press E to interact" class="interaction-text" />
+    <Style src="project://database/Assets/Scripts/UI/USS/InteractionPrompt.uss?fileID=7433441132597879392&amp;guid=d5cc07c8de96abf4f9462099ec490bdf&amp;type=3#InteractionPrompt"/>
+    <ui:VisualElement name="interaction-prompt-container" class="interaction-prompt-container" style="display: none;">
+        <ui:VisualElement class="interaction-prompt">
+            <ui:Label text="E" class="interaction-icon"/>
+            <ui:Label name="prompt-text" text="Press E to interact" class="prompt-text"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

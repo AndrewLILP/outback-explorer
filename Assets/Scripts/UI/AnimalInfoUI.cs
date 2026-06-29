@@ -1,34 +1,31 @@
-﻿// AnimalInfoUI.cs
-// UI Controller that displays animal information when player is nearby
-// Receives direct notifications from AnimalController
+// AnimalInfoUI.cs
+// UI Controller for the compact "field journal" card that shows animal facts
+// when the player is near a discoverable animal. Redesigned for the RCC
+// scene: a smaller bottom-center card instead of the old large left panel.
+//
+// Public contract (SetCurrentAnimal / OnAnimalRangeExit) is unchanged, so
+// AnimalController needs no changes to keep working with this rewrite.
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 using RelaxingDrive.Animals;
 
 namespace RelaxingDrive.UI
 {
-    /// <summary>
-    /// Controls the Animal Info Panel UI.
-    /// Displays animal information when notified by AnimalController.
-    /// Handles fade in/out animations.
-    /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class AnimalInfoUI : MonoBehaviour
     {
         [Header("UI References")]
-        [Tooltip("StyleSheet containing animations and styling")]
+        [Tooltip("Optional - only needed if the USS isn't already linked via the UXML's <Style> tag")]
         [SerializeField] private StyleSheet animalInfoStyleSheet;
 
         [Header("Debug")]
         [SerializeField] private bool showDebugMessages = true;
 
-        // UI Element references
         private UIDocument uiDocument;
         private VisualElement rootPanel;
-        private VisualElement container;
 
-        // UI Labels
         private Label animalNameLabel;
         private Label scientificNameLabel;
         private Label habitatValue;
@@ -38,47 +35,57 @@ namespace RelaxingDrive.UI
         private Label discoveryText;
         private VisualElement animalIcon;
 
-        // State tracking
         private AnimalData currentAnimal;
-        private bool isPanelVisible = false;
+        private bool isPanelVisible;
+        private bool initialized;
 
         private void Awake()
         {
             uiDocument = GetComponent<UIDocument>();
-
-            if (uiDocument == null)
-            {
-                Debug.LogError("AnimalInfoUI: UIDocument component not found!", this);
-                enabled = false;
-                return;
-            }
         }
 
         private void OnEnable()
         {
-            // Wait one frame for UI to initialize
-            Invoke(nameof(InitializeUI), 0.1f);
+            StartCoroutine(InitializeWhenReady());
         }
 
-        private void InitializeUI()
+        /// <summary>
+        /// Waits until the UIDocument's visual tree actually exists before
+        /// querying it, then hides the panel unconditionally. The previous
+        /// version's HidePanel() had `if (!isPanelVisible) return;` as its
+        /// first line - since isPanelVisible defaults to false, the very
+        /// first call (from initialization) returned immediately and never
+        /// applied the hidden CSS class, leaving the panel visible with raw
+        /// placeholder UXML text from scene start. Fixed below by removing
+        /// that guard entirely; re-applying "hidden" when already hidden is
+        /// a harmless no-op in UI Toolkit.
+        /// </summary>
+        private IEnumerator InitializeWhenReady()
         {
-            // Get root visual element
-            rootPanel = uiDocument.rootVisualElement.Q<VisualElement>("animal-info-root");
+            int framesWaited = 0;
+            while ((uiDocument == null || uiDocument.rootVisualElement == null) && framesWaited < 60)
+            {
+                framesWaited++;
+                yield return null;
+            }
 
+            if (uiDocument == null || uiDocument.rootVisualElement == null)
+            {
+                Debug.LogError("[AnimalInfoUI] rootVisualElement never became available - " +
+                    "check that this UIDocument's Panel Settings AND Source Asset are both assigned.");
+                yield break;
+            }
+
+            rootPanel = uiDocument.rootVisualElement.Q<VisualElement>("animal-info-root");
             if (rootPanel == null)
             {
-                Debug.LogError("AnimalInfoUI: Could not find 'animal-info-root' in UXML!", this);
-                return;
+                Debug.LogError("[AnimalInfoUI] Could not find 'animal-info-root' in the UXML!");
+                yield break;
             }
 
-            // Apply stylesheet
-            if (animalInfoStyleSheet != null)
-            {
+            if (animalInfoStyleSheet != null && !rootPanel.styleSheets.Contains(animalInfoStyleSheet))
                 rootPanel.styleSheets.Add(animalInfoStyleSheet);
-            }
 
-            // Cache UI element references
-            container = rootPanel.Q<VisualElement>("animal-info-container");
             animalNameLabel = rootPanel.Q<Label>("animal-name");
             scientificNameLabel = rootPanel.Q<Label>("scientific-name");
             habitatValue = rootPanel.Q<Label>("habitat-value");
@@ -88,151 +95,100 @@ namespace RelaxingDrive.UI
             discoveryText = rootPanel.Q<Label>("discovery-text");
             animalIcon = rootPanel.Q<VisualElement>("animal-icon");
 
-            // Start hidden
             HidePanel();
 
-            Debug.Log("AnimalInfoUI: Initialized successfully");
+            initialized = true;
+            Log($"Initialized after {framesWaited} frame(s)");
         }
 
         /// <summary>
         /// Called by AnimalController when player enters animal's range.
-        /// Shows the panel with animal information.
         /// </summary>
         public void SetCurrentAnimal(AnimalData animalData, Vector3 animalPosition)
         {
-            if (animalData == null)
-            {
-                Debug.LogWarning("AnimalInfoUI: SetCurrentAnimal called with null data!");
-                return;
-            }
+            if (!initialized || animalData == null) return;
 
             currentAnimal = animalData;
+            bool isFirstTime = AnimalDiscoveryManager.Instance != null &&
+                !AnimalDiscoveryManager.Instance.HasDiscovered(animalData);
 
-            // Check if this is first time discovering this animal
-            bool isFirstTime = !AnimalDiscoveryManager.Instance.HasDiscovered(animalData);
-
-            // Update UI content
             UpdateAnimalInfo(animalData, isFirstTime);
-
-            // Show panel
             ShowPanel();
 
-            if (showDebugMessages)
-            {
-                Debug.Log($"AnimalInfoUI: Now showing {animalData.AnimalName} (First time: {isFirstTime})");
-            }
+            Log($"Showing {animalData.AnimalName} (first time: {isFirstTime})");
         }
 
         /// <summary>
         /// Called by AnimalController when player exits animal's range.
-        /// Hides the panel.
         /// </summary>
         public void OnAnimalRangeExit(AnimalData animalData)
         {
-            // Only hide if this is the animal we're currently displaying
-            if (currentAnimal != null && currentAnimal.AnimalName == animalData.AnimalName)
+            if (!initialized) return;
+
+            if (currentAnimal != null && animalData != null && currentAnimal.AnimalName == animalData.AnimalName)
             {
                 HidePanel();
                 currentAnimal = null;
-
-                if (showDebugMessages)
-                {
-                    Debug.Log($"AnimalInfoUI: Hiding panel (player left {animalData.AnimalName})");
-                }
+                Log($"Hiding panel ({animalData.AnimalName} left range)");
             }
         }
 
-        /// <summary>
-        /// Updates UI labels with animal data.
-        /// </summary>
         private void UpdateAnimalInfo(AnimalData animalData, bool isFirstTime)
         {
-            // Update text content
-            animalNameLabel.text = animalData.AnimalName;
-            scientificNameLabel.text = animalData.ScientificName;
-            habitatValue.text = animalData.Habitat;
-            dietValue.text = animalData.Diet;
-            funFactValue.text = animalData.FunFact;
+            if (animalNameLabel != null) animalNameLabel.text = animalData.AnimalName;
+            if (scientificNameLabel != null) scientificNameLabel.text = animalData.ScientificName;
+            if (habitatValue != null) habitatValue.text = animalData.Habitat;
+            if (dietValue != null) dietValue.text = animalData.Diet;
+            if (funFactValue != null) funFactValue.text = animalData.FunFact;
 
-            // Update icon (if sprite exists)
-            if (animalData.Icon != null)
+            if (animalIcon != null)
             {
-                animalIcon.style.backgroundImage = new StyleBackground(animalData.Icon);
-            }
-            else
-            {
-                // Use placeholder or keep default
-                animalIcon.style.backgroundImage = StyleKeyword.None;
+                animalIcon.style.backgroundImage = animalData.Icon != null
+                    ? new StyleBackground(animalData.Icon)
+                    : new StyleBackground(StyleKeyword.None);
             }
 
-            // Update discovery badge
-            if (isFirstTime)
+            if (discoveryBadge != null && discoveryText != null)
             {
-                discoveryText.text = "🆕 Discovered!";
-                discoveryBadge.RemoveFromClassList("discovery-badge--hidden");
-                discoveryBadge.RemoveFromClassList("discovery-badge--already");
-            }
-            else
-            {
-                discoveryText.text = "✓ Already Discovered";
-                discoveryBadge.RemoveFromClassList("discovery-badge--hidden");
-                discoveryBadge.AddToClassList("discovery-badge--already");
-            }
-
-            if (showDebugMessages)
-            {
-                Debug.Log($"AnimalInfoUI: Updated info for {animalData.AnimalName}");
+                if (isFirstTime)
+{
+    discoveryText.text = "New discovery";
+    discoveryBadge.RemoveFromClassList("discovery-badge--already");
+}
+else
+{
+    discoveryText.text = "Already discovered";
+    discoveryBadge.AddToClassList("discovery-badge--already");
+}
             }
         }
 
-        /// <summary>
-        /// Shows the panel with fade in animation.
-        /// </summary>
         private void ShowPanel()
         {
             if (isPanelVisible) return;
-
             rootPanel.RemoveFromClassList("animal-panel--hidden");
             rootPanel.AddToClassList("animal-panel--visible");
             isPanelVisible = true;
-
-            if (showDebugMessages)
-            {
-                Debug.Log("AnimalInfoUI: Panel visible");
-            }
         }
 
-        /// <summary>
-        /// Hides the panel with fade out animation.
-        /// </summary>
         private void HidePanel()
         {
-            if (!isPanelVisible) return;
-
             rootPanel.RemoveFromClassList("animal-panel--visible");
             rootPanel.AddToClassList("animal-panel--hidden");
             isPanelVisible = false;
-
-            if (showDebugMessages)
-            {
-                Debug.Log("AnimalInfoUI: Panel hidden");
-            }
         }
 
-        /// <summary>
-        /// Manual method to toggle panel (for testing).
-        /// </summary>
+        /// <summary>Manual toggle, for testing from the Inspector.</summary>
         [ContextMenu("Test Panel Visibility")]
         public void TestPanelVisibility()
         {
-            if (isPanelVisible)
-            {
-                HidePanel();
-            }
-            else
-            {
-                ShowPanel();
-            }
+            if (isPanelVisible) HidePanel();
+            else ShowPanel();
+        }
+
+        private void Log(string message)
+        {
+            if (showDebugMessages) Debug.Log($"[AnimalInfoUI] {message}");
         }
     }
 }

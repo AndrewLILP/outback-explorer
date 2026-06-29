@@ -1,0 +1,115 @@
+/* AnimalInfoPanel.uss
+   Compact bottom-center "field journal" card - same warm palette as HUD.uss.
+   Replaces the old large left-side panel. */
+
+.animal-panel {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 170px; /* sits above the speed-comparison pill, never overlaps it */
+}
+
+.animal-panel--hidden {
+    opacity: 0;
+    display: none;
+}
+
+.animal-panel--visible {
+    opacity: 1;
+    display: flex;
+}
+
+.journal-card {
+    flex-direction: row;
+    align-items: center;
+    max-width: 560px;
+    background-color: rgba(44, 38, 28, 0.92);
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.55);
+    padding: 14px 18px;
+}
+
+.journal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background-color: rgba(196, 164, 105, 0.18);
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.5);
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.journal-body {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.journal-header-row {
+    flex-direction: row;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.journal-name {
+    font-size: 17px;
+    color: rgb(238, 230, 214);
+    -unity-font-style: bold;
+    margin-right: 8px;
+}
+
+.journal-sci-name {
+    font-size: 12px;
+    color: rgba(196, 180, 150, 0.75);
+    -unity-font-style: italic;
+}
+
+.journal-fun-fact {
+    font-size: 13px;
+    color: rgb(238, 230, 214);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.journal-meta-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.journal-meta-label {
+    font-size: 11px;
+    color: rgba(196, 164, 105, 0.85);
+    -unity-font-style: bold;
+    margin-right: 4px;
+}
+
+.journal-meta-value {
+    font-size: 11px;
+    color: rgba(196, 180, 150, 0.85);
+    margin-right: 14px;
+    white-space: normal;
+}
+
+.journal-badge {
+    background-color: rgba(196, 110, 58, 0.25);
+    border-radius: 999px;
+    border-width: 1px;
+    border-color: rgb(196, 110, 58);
+    padding: 4px 12px;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.journal-badge-text {
+    font-size: 11px;
+    color: rgb(238, 230, 214);
+    -unity-font-style: bold;
+}
+
+.journal-badge--already {
+    background-color: rgba(122, 138, 84, 0.2);
+    border-color: rgb(122, 138, 84);
+}
