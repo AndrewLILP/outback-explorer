@@ -1,7 +1,7 @@
 /* HUD.uss
-   Warm "field journal" palette - replaces the old dark sci-fi blue/green look.
-   Shared tones used across HUD, AnimalInfoPanel and InteractionPrompt for a
-   consistent road-trip feel:
+   Warm "field journal" palette - shared across HUD, AnimalInfoPanel,
+   InteractionPrompt and PauseMenu (separate scene) for a consistent
+   road-trip feel:
    - Panel surface:  rgba(44, 38, 28, 0.88)  deep leather/coffee brown
    - Panel border:   rgba(196, 164, 105, 0.55) brass/tan
    - Primary text:   rgb(238, 230, 214)      cream
@@ -129,8 +129,8 @@
     white-space: normal;
 }
 
-/* Undiscovered - faint dashed-look outline (UI Toolkit has no dashed border,
-   so a thin low-contrast border approximates the "blank passport page" look) */
+/* Undiscovered - faint outline (UI Toolkit has no dashed border, so a thin
+   low-contrast border approximates the "blank passport page" look) */
 .stamp.undiscovered .stamp-code {
     background-color: rgba(0, 0, 0, 0);
     border-width: 1px;
@@ -182,7 +182,7 @@
 }
 
 .stamp.platypus.discovered .stamp-code {
-    background-color: rgb(94, 124, 130); /* corrected to a teal-brown tone */
+    background-color: rgb(94, 124, 130);
     border-color: rgb(60, 85, 90);
     rotate: -5deg;
 }
@@ -204,97 +204,4 @@
 .mission-text {
     font-size: 16px;
     color: rgb(238, 230, 214);
-}
-
-/* ===================================
-   PAUSE MENU OVERLAY
-   =================================== */
-.pause-menu {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(20, 17, 12, 0.75);
-    align-items: center;
-    justify-content: center;
-}
-
-.pause-container {
-    background-color: rgba(44, 38, 28, 0.95);
-    border-radius: 16px;
-    padding: 40px;
-    border-width: 1px;
-    border-color: rgba(196, 164, 105, 0.5);
-    min-width: 360px;
-    align-items: center;
-}
-
-.pause-title {
-    font-size: 36px;
-    color: rgb(238, 230, 214);
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    margin-bottom: 24px;
-}
-
-.pause-button {
-    width: 280px;
-    height: 46px;
-    margin: 8px;
-    background-color: rgba(196, 110, 58, 0.25);
-    border-radius: 999px;
-    border-width: 1px;
-    border-color: rgba(196, 164, 105, 0.55);
-    color: rgb(238, 230, 214);
-    font-size: 16px;
-    transition-duration: 0.15s;
-}
-
-.pause-button:hover {
-    background-color: rgba(196, 110, 58, 0.4);
-    border-color: rgba(196, 164, 105, 0.9);
-    scale: 1.03;
-}
-
-.pause-button:active {
-    background-color: rgba(196, 110, 58, 0.55);
-    scale: 0.97;
-}
-
-/* ===================================
-   INSTRUCTIONS PANEL
-   =================================== */
-.instructions-panel {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(20, 17, 12, 0.85);
-    align-items: center;
-    justify-content: center;
-}
-
-.instructions-title {
-    font-size: 28px;
-    color: rgb(238, 230, 214);
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    margin-bottom: 16px;
-}
-
-.instructions-content {
-    background-color: rgba(30, 26, 19, 0.9);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
-    min-width: 340px;
-}
-
-.instruction-line {
-    font-size: 15px;
-    color: rgba(196, 180, 150, 0.9);
-    margin: 6px 0;
-    -unity-text-align: middle-left;
-}
-
-.instruction-spacer {
-    height: 12px;
 }

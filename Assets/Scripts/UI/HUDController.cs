@@ -2,22 +2,22 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
-using RelaxingDrive.Core;
 using RelaxingDrive.Animals;
 using RelaxingDrive.Player;
 
 namespace RelaxingDrive.UI
 {
     /// <summary>
-    /// Slim HUD controller for the RCC gameplay scene (also works in the Itch/
-    /// PolyStang scene - speed comes from IVehicleController, not a concrete
-    /// car type, so there's no PolyStang- or RCC-specific code here at all).
-    ///
-    /// Owns three things:
-    /// - The "faster than a kangaroo" speed-comparison text (RCC's own dash
-    ///   shows the actual number, so this HUD doesn't duplicate it).
+    /// Slim HUD controller for the gameplay scene. Owns exactly two things:
+    /// - The "faster than a kangaroo" speed-comparison text (reads speed via
+    ///   IVehicleController through PlayerStateManager, so it's car-agnostic).
     /// - The collapsible animal-discovery stamp strip.
-    /// - The pause menu (Resume / Save / New Game / Instructions).
+    ///
+    /// Pause/Resume/Save/New Game/Instructions moved out entirely - see
+    /// PauseFlowManager (gameplay scene) and PauseMenuSceneController
+    /// (PauseMenuScene), which avoid the uGUI EventSystem/UI Toolkit Sort
+    /// Order conflict by loading pause as a separate scene instead of an
+    /// overlapping UIDocument competing with RCC's Canvas.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class HUDController : MonoBehaviour
@@ -45,15 +45,6 @@ namespace RelaxingDrive.UI
         private VisualElement discoveryGrid;
         private VisualElement[] discoveryDots;
 
-        private VisualElement pauseMenu;
-        private Button resumeButton;
-        private Button saveButton;
-        private Button newGameButton;
-        private Button instructionsButton;
-        private VisualElement instructionsPanel;
-        private Button closeInstructionsButton;
-
-        private bool isPaused;
         private bool isDiscoveryExpanded;
         private Coroutine collapseRoutine;
         private bool initialized;
@@ -86,13 +77,8 @@ namespace RelaxingDrive.UI
 
         /// <summary>
         /// Waits until the UIDocument's panel has actually built a visual tree
-        /// before querying it. This is a deliberate guard against the previous
-        /// session's unresolved bug: if rootVisualElement is null (e.g. the
-        /// UIDocument's Panel Settings isn't assigned yet), root.Q(...) throws
-        /// immediately and silently aborts setup before anything logs or
-        /// subscribes to events - which would explain both a dead Escape key
-        /// and a permanently frozen "0/7" display. This either prevents that
-        /// failure outright, or makes it loud instead of silent.
+        /// before querying it - guards against root.Q(...) throwing on a null
+        /// rootVisualElement and silently aborting setup.
         /// </summary>
         private IEnumerator InitializeWhenReady()
         {
@@ -133,25 +119,9 @@ namespace RelaxingDrive.UI
             for (int i = 0; i < AnimalOrder.Length; i++)
                 discoveryDots[i] = root.Q<VisualElement>($"Dot{i}");
 
-            pauseMenu = root.Q<VisualElement>("PauseMenu");
-            resumeButton = root.Q<Button>("ResumeButton");
-            saveButton = root.Q<Button>("SaveButton");
-            newGameButton = root.Q<Button>("NewGameButton");
-            instructionsButton = root.Q<Button>("InstructionsButton");
-            instructionsPanel = root.Q<VisualElement>("InstructionsPanel");
-            closeInstructionsButton = root.Q<Button>("CloseInstructionsButton");
-
             if (discoveryPill != null) discoveryPill.clicked += ToggleDiscoveryGrid;
-            if (resumeButton != null) resumeButton.clicked += OnResumeClicked;
-            if (saveButton != null) saveButton.clicked += OnSaveClicked;
-            if (newGameButton != null) newGameButton.clicked += OnNewGameClicked;
-            if (instructionsButton != null) instructionsButton.clicked += OnInstructionsClicked;
-            if (closeInstructionsButton != null) closeInstructionsButton.clicked += OnCloseInstructionsClicked;
 
             SetDiscoveryGridExpanded(false);
-
-            if (pauseMenu != null) pauseMenu.style.display = DisplayStyle.None;
-            if (instructionsPanel != null) instructionsPanel.style.display = DisplayStyle.None;
 
             Log("UI elements wired up");
         }
@@ -160,7 +130,6 @@ namespace RelaxingDrive.UI
         {
             if (!initialized) return;
             UpdateSpeedComparison();
-            HandlePauseInput();
         }
 
         /// <summary>
@@ -189,71 +158,6 @@ namespace RelaxingDrive.UI
             else if (speed >= KOALA_SPEED) speedComparisonLabel.text = "Faster than a koala";
             else if (speed >= ECHIDNA_SPEED) speedComparisonLabel.text = "Faster than an echidna";
             else speedComparisonLabel.text = "Take your time...";
-        }
-
-        private void HandlePauseInput()
-        {
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (isPaused) HidePauseMenu();
-                else ShowPauseMenu();
-            }
-        }
-
-        private void ShowPauseMenu()
-        {
-            if (pauseMenu == null) return;
-            pauseMenu.style.display = DisplayStyle.Flex;
-            isPaused = true;
-            Time.timeScale = 0f;
-            Log("Paused");
-        }
-
-        private void HidePauseMenu()
-        {
-            if (pauseMenu == null) return;
-            pauseMenu.style.display = DisplayStyle.None;
-            isPaused = false;
-            Time.timeScale = 1f;
-            if (instructionsPanel != null) instructionsPanel.style.display = DisplayStyle.None;
-            Log("Resumed");
-        }
-
-        private void OnResumeClicked() => HidePauseMenu();
-
-        private void OnSaveClicked()
-        {
-            if (GameSaveManager.Instance != null)
-            {
-                GameSaveManager.Instance.Save();
-                Log("Game saved");
-            }
-            else
-            {
-                Debug.LogError("[HUDController] GameSaveManager not found!");
-            }
-        }
-
-        private void OnNewGameClicked()
-        {
-            if (GameSaveManager.Instance == null)
-            {
-                Debug.LogError("[HUDController] GameSaveManager not found!");
-                return;
-            }
-
-            HidePauseMenu();
-            GameSaveManager.Instance.StartNewGame();
-        }
-
-        private void OnInstructionsClicked()
-        {
-            if (instructionsPanel != null) instructionsPanel.style.display = DisplayStyle.Flex;
-        }
-
-        private void OnCloseInstructionsClicked()
-        {
-            if (instructionsPanel != null) instructionsPanel.style.display = DisplayStyle.None;
         }
 
         private void ToggleDiscoveryGrid() => SetDiscoveryGridExpanded(!isDiscoveryExpanded);

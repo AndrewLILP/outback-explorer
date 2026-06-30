@@ -1,0 +1,29 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/USS/PauseMenu.uss?fileID=7433441132597879392&amp;guid=506e40e6f1553454fbea0aa36d892dee&amp;type=3#PauseMenu"/>
+    <ui:VisualElement name="PauseRoot" class="pause-menu">
+        <ui:VisualElement name="PauseContainer" class="pause-container">
+            <ui:Label text="Paused" class="pause-title"/>
+            <ui:Button name="ResumeButton" text="Resume" class="pause-button"/>
+            <ui:Button name="SaveButton" text="Save game" class="pause-button"/>
+            <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
+            <ui:Button name="InstructionsButton" text="How to play" class="pause-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="InstructionsPanel" class="instructions-panel" style="display: none;">
+            <ui:Label text="How to play" class="instructions-title"/>
+            <ui:VisualElement name="TutorialAnimationSlot" class="tutorial-animation-slot"/>
+            <ui:VisualElement class="instructions-content">
+                <ui:Label text="WASD / arrow keys - drive" class="instruction-line"/>
+                <ui:Label text="Space - brake" class="instruction-line"/>
+                <ui:Label text="E - enter / exit car" class="instruction-line"/>
+                <ui:Label text="Mouse - look around" class="instruction-line"/>
+                <ui:Label text="Esc - pause menu" class="instruction-line"/>
+                <ui:Label class="instruction-spacer"/>
+                <ui:Label text="Save / load" class="instruction-line"/>
+                <ui:Label text="F5 - quick save" class="instruction-line"/>
+                <ui:Label text="F6 - quick load" class="instruction-line"/>
+                <ui:Label text="F7 - delete save" class="instruction-line"/>
+            </ui:VisualElement>
+            <ui:Button name="CloseInstructionsButton" text="Close" class="pause-button"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
