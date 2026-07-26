@@ -1,123 +1,48 @@
 // PauseFlowManager.cs
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using RelaxingDrive.Core;
 
 namespace RelaxingDrive.UI
 {
     /// <summary>
-    /// Owns the pause flow for the gameplay scene. Escape additively loads a
-    /// separate PauseMenuScene on top of gameplay, instead of an overlapping
-    /// UIDocument competing with RCC's uGUI Canvas for input - that approach
-    /// hit a documented Unity limitation: once any uGUI EventSystem exists in
-    /// the loaded scenes, it mediates ALL pointer input by comparing
-    /// PanelSettings Sort Order against Canvas sortingOrder, and getting that
-    /// to reliably favour our panel proved unreliable in practice.
+    /// Owns entry into the pause flow from the gameplay scene.
     ///
-    /// The gameplay scene stays loaded and frozen (Time.timeScale = 0)
-    /// underneath while paused, so Resume returns to the exact same moment -
-    /// no respawn, no lost car position. As a second, belt-and-suspenders
-    /// safeguard against the input conflict, RCC's Canvas (and any other
-    /// uGUI Canvas assigned below) is also disabled while paused.
+    /// Approach: scene REPLACEMENT, not an additive overlay. Pressing Pause
+    /// loads PauseMenuScene non-additively, which unloads the gameplay scene
+    /// entirely. This avoids the layering/input-routing conflicts hit when
+    /// two scenes (each with their own Camera/UIDocument/PanelSettings) were
+    /// active at once - see Pause_Menu_Scene_Summary for the abandoned
+    /// additive-overlay attempt.
     ///
-    /// PauseMenuSceneController (living in PauseMenuScene) calls back into
-    /// this singleton for Resume/New Game, since both scripts are alive
-    /// simultaneously once that scene is loaded additively.
+    /// Because the gameplay scene unloads on pause, this component is
+    /// destroyed along with it - that's expected and fine. There is no
+    /// cross-scene callback: PauseMenuSceneController (living in
+    /// PauseMenuScene) doesn't call back into this class at all. It talks
+    /// directly to SceneManager and to GameSaveManager, which stays alive
+    /// because it's DontDestroyOnLoad.
+    ///
+    /// Known, accepted tradeoff: player/car position resets on Resume, since
+    /// the gameplay scene reloads fresh rather than being preserved frozen
+    /// underneath. Revisit later if position preservation is wanted.
     /// </summary>
     public class PauseFlowManager : MonoBehaviour
     {
-        public static PauseFlowManager Instance { get; private set; }
-
         [Header("Pause Scene")]
         [Tooltip("Must exactly match the scene name in Build Settings.")]
         [SerializeField] private string pauseSceneName = "PauseMenuScene";
 
-        [Header("Canvases to disable while paused")]
-        [Tooltip("RCC's dashboard Canvas (and any other uGUI Canvas) - belt-and-suspenders against the uGUI EventSystem/UI Toolkit Sort Order conflict.")]
-        [SerializeField] private GameObject[] canvasesToDisableWhilePaused;
-
         [SerializeField] private bool showDebugLogs = true;
-
-        private bool isPaused;
-        public bool IsPaused => isPaused;
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this) Instance = null;
-        }
 
         private void Update()
         {
-            if (!isPaused && Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape))
                 EnterPause();
         }
 
         public void EnterPause()
         {
-            if (isPaused) return;
-            isPaused = true;
-
-            SetCanvasesActive(false);
-            Time.timeScale = 0f;
-            SceneManager.LoadScene(pauseSceneName, LoadSceneMode.Additive);
-
-            Log("Entered pause - loaded pause scene additively");
-        }
-
-        /// <summary>Called by PauseMenuSceneController's Resume button.</summary>
-        public void ExitPause()
-        {
-            if (!isPaused) return;
-
-            SceneManager.UnloadSceneAsync(pauseSceneName);
-            Time.timeScale = 1f;
-            SetCanvasesActive(true);
-            isPaused = false;
-
-            Log("Exited pause - unloaded pause scene");
-        }
-
-        /// <summary>
-        /// Called by PauseMenuSceneController's New Game button.
-        /// Time.timeScale MUST be restored before GameSaveManager reloads the
-        /// gameplay scene (LoadSceneMode.Single under the hood), or the
-        /// freshly-reloaded scene would start frozen at timeScale 0. That
-        /// same scene reload also implicitly unloads PauseMenuScene - no
-        /// separate UnloadSceneAsync call needed here.
-        /// </summary>
-        public void ExitPauseForNewGame()
-        {
-            Time.timeScale = 1f;
-            isPaused = false;
-
-            if (GameSaveManager.Instance != null)
-            {
-                GameSaveManager.Instance.StartNewGame();
-                Log("New game started - gameplay scene reloading");
-            }
-            else
-            {
-                Debug.LogError("[PauseFlowManager] GameSaveManager not found!");
-            }
-        }
-
-        private void SetCanvasesActive(bool active)
-        {
-            if (canvasesToDisableWhilePaused == null) return;
-            foreach (GameObject canvas in canvasesToDisableWhilePaused)
-            {
-                if (canvas != null) canvas.SetActive(active);
-            }
+            Log($"Entering pause - loading '{pauseSceneName}' (replaces gameplay scene)");
+            SceneManager.LoadScene(pauseSceneName, LoadSceneMode.Single);
         }
 
         private void Log(string message)

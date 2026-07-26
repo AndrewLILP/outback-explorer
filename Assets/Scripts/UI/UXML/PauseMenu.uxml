@@ -6,6 +6,7 @@
             <ui:Button name="ResumeButton" text="Resume" class="pause-button"/>
             <ui:Button name="SaveButton" text="Save game" class="pause-button"/>
             <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
+            <ui:Button name="ChangeCarsButton" text="Change car" class="pause-button"/>
             <ui:Button name="InstructionsButton" text="How to play" class="pause-button"/>
         </ui:VisualElement>
         <ui:VisualElement name="InstructionsPanel" class="instructions-panel" style="display: none;">
