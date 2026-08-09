@@ -5661,9 +5661,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32e56c58b094d404d82d369280704358, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  carController: {fileID: 1481510945}
   uiDocument: {fileID: 394623814}
-  speedMultiplier: 4
+  discoveryPopupSeconds: 3
   showDebugLogs: 1
 --- !u!1001 &413770254
 PrefabInstance:
@@ -14316,15 +14315,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 374.71
+      value: -20
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 36.23
+      value: 10.5
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -354.3
+      value: 154.6
       objectReference: {fileID: 0}
     - target: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -21844,6 +21843,7 @@ MonoBehaviour:
   carGameObject: {fileID: 1592142953}
   playerCharacter: {fileID: 1257982725}
   followCamera: {fileID: 290111012}
+  walkingCameraObject: {fileID: 0}
   drivingCameraOffset: {x: 0, y: 3, z: -7}
   walkingCameraOffset: {x: 0, y: 2, z: -5}
   exitCarOffset: {x: 2, y: 0, z: 0}
@@ -23974,17 +23974,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 95160904589666742, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
   m_PrefabInstance: {fileID: 956911312}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1481510945 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3613138262666134574, guid: 7770b09d67eb5764cb98abdf438f7bc3, type: 3}
-  m_PrefabInstance: {fileID: 956911312}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1592142953}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbbfc52a303950340922ce4555a6401c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1483606288
 PrefabInstance:
   m_ObjectHideFlags: 0
