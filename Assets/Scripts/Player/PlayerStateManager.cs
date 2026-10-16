@@ -1,5 +1,6 @@
 // PlayerStateManager.cs
 using UnityEngine;
+using RelaxingDrive.Core;
 
 namespace RelaxingDrive.Player
 {
@@ -14,7 +15,7 @@ namespace RelaxingDrive.Player
     /// by RCC_Spawner in Start() - resolved via RCC_SceneManager.OnVehicleChanged,
     /// since Awake() runs too early to see it).
     /// </summary>
-    public class PlayerStateManager : MonoBehaviour
+    public class PlayerStateManager : MonoBehaviour, IActivePlayerProvider
     {
         private static PlayerStateManager instance;
         public static PlayerStateManager Instance => instance;
@@ -54,8 +55,16 @@ namespace RelaxingDrive.Player
         public Vector3 WalkingCameraOffset => walkingCameraOffset;
         public Vector3 ExitCarOffset => exitCarOffset;
 
-        public bool IsDriving => currentState is DrivingState;
+                public bool IsDriving => currentState is DrivingState;
         public bool IsOnFoot => currentState is OnFootState;
+
+        // IActivePlayerProvider: the transform the player is currently controlling.
+        // VisitZone (and later systems) ask this instead of checking states themselves.
+        // Returns null before the RCC car has spawned, which VisitZone safely ignores.
+        public Transform ActivePlayerTransform =>
+            IsDriving ? (carGameObject != null ? carGameObject.transform : null) :
+            IsOnFoot  ? (playerCharacter != null ? playerCharacter.transform : null) :
+            null;
 
         private void Awake()
         {
