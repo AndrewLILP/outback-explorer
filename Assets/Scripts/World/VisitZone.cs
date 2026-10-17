@@ -174,12 +174,16 @@ namespace RelaxingDrive.World
             isPlayerInside = true;
             string id = ZoneID;
 
+            // VisitManager applies the visit policy (e.g. cooldown) and tells us if it counted.
+            bool counted = false;
             if (recordVisit && !string.IsNullOrEmpty(id) && VisitManager.Instance != null)
-                VisitManager.Instance.RecordVisit(id);
+                counted = VisitManager.Instance.RecordVisit(id);
 
             if (showDebugMessages)
             {
-                string note = recordVisit ? "visit recorded" : "already here at start, not counted";
+                string note = !recordVisit ? "already here at start, not counted"
+                            : counted ? "visit recorded"
+                            : "not counted, see VisitManager log";
                 Debug.Log($"[VisitZone] Player entered '{DisplayName}' [{id}] ({note})", this);
             }
 
@@ -270,6 +274,14 @@ namespace RelaxingDrive.World
             else label = zoneData.DisplayName;
 
             if (Application.isPlaying && isPlayerInside) label += "  (inside)";
+
+            // Show the cooldown countdown while testing (updates when the Scene view repaints).
+            if (Application.isPlaying && VisitManager.ExistingInstance != null)
+            {
+                float wait = VisitManager.ExistingInstance.GetSecondsUntilCountable(ZoneID);
+                if (wait > 0f) label += $"  ⏱ {wait:0}s";
+            }
+
             UnityEditor.Handles.Label(transform.TransformPoint(box.center), label);
 #endif
         }
