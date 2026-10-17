@@ -18,9 +18,11 @@ namespace RelaxingDrive.World
         [Header("Save/Load")]
         [Tooltip("Unique ID for this building (must be unique in scene!)")]
         [SerializeField] private string buildingID = "";
-
         [Header("Activation Settings")]
-        [Tooltip("The zone ID that triggers this activation")]
+        [Tooltip("The zone whose visits unlock this object.")]
+        [SerializeField] private ZoneData targetZone;
+
+        [Tooltip("LEGACY — only used when Target Zone is empty. Will be removed once all objects are migrated.")]
         [SerializeField] private string targetZoneID;
 
         [Tooltip("How many visits required before activation")]
@@ -50,6 +52,8 @@ namespace RelaxingDrive.World
 
         public bool IsActive => isActive;
         public string BuildingID => buildingID;
+        /// <summary>The zone key this object listens for. Prefers the ZoneData asset; falls back to the legacy string.</summary>
+        public string TargetZoneID => targetZone != null ? targetZone.ZoneID : TargetZoneID;
 
         /// <summary>
         /// Defines how the object appears when activated.
@@ -134,16 +138,16 @@ private void Awake()
         {
             if (showDebugMessages)
             {
-                Debug.Log($"{gameObject.name} (ID: {buildingID}) - Target Zone: '{targetZoneID}', Required Visits: {requiredVisits}, Type: {activationType}");
+                Debug.Log($"{gameObject.name} (ID: {buildingID}) - Target Zone: '{TargetZoneID}', Required Visits: {requiredVisits}, Type: {activationType}");
             }
 
             // Check if already activated (in case game was saved/loaded)
             if (VisitManager.Instance != null)
             {
-                int currentVisits = VisitManager.Instance.GetVisitCount(targetZoneID);
+                int currentVisits = VisitManager.Instance.GetVisitCount(TargetZoneID);
 
                 if (showDebugMessages)
-                    Debug.Log($"{gameObject.name} - Current visits for '{targetZoneID}': {currentVisits}");
+                    Debug.Log($"{gameObject.name} - Current visits for '{TargetZoneID}': {currentVisits}");
 
                 if (currentVisits >= requiredVisits && !isActive)
                 {
@@ -160,7 +164,7 @@ private void Awake()
         private void HandleZoneVisited(string zoneID, int visitCount)
         {
             // Only respond to our target zone
-            if (zoneID != targetZoneID)
+            if (zoneID != TargetZoneID)
                 return;
 
             // Already active or activating
