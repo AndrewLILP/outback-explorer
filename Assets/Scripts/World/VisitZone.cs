@@ -70,7 +70,11 @@ namespace RelaxingDrive.World
 
         public bool IsPlayerInside => isPlayerInside;
 
+        /// <summary>Did the current (or most recent) entry count as a visit? Used by the on-foot bonus.</summary>
+        public bool EntryCounted => entryCounted;
+
         private BoxCollider zoneCollider;
+        private bool entryCounted;
         private IActivePlayerProvider playerProvider;
         private bool isPlayerInside;
         private bool hasCheckedOnce;
@@ -112,6 +116,7 @@ namespace RelaxingDrive.World
         {
             isPlayerInside = false;
             hasCheckedOnce = false;
+            entryCounted = false;
             playerFirstSeenTime = -1f;
         }
 
@@ -178,6 +183,8 @@ namespace RelaxingDrive.World
             bool counted = false;
             if (recordVisit && !string.IsNullOrEmpty(id) && VisitManager.Instance != null)
                 counted = VisitManager.Instance.RecordVisit(id);
+
+            entryCounted = counted; // set BEFORE firing OnPlayerEntered so listeners see it
 
             if (showDebugMessages)
             {

@@ -132,17 +132,35 @@ namespace RelaxingDrive.Core
             }
 
             lastCountedTime[zoneID] = Time.time;
+            AddVisit(zoneID, "visited");
+            return true;
+        }
 
+        /// <summary>
+        /// Adds a bonus visit that BYPASSES the visit policy. Bonuses reward a visit that has
+        /// already counted (e.g. walking around on foot), so a cooldown shouldn't block them.
+        /// Does not reset the cooldown timer.
+        /// </summary>
+        public void RecordBonusVisit(string zoneID, string source)
+        {
+            if (string.IsNullOrEmpty(zoneID))
+                return;
+
+            AddVisit(zoneID, $"bonus visit ({source})");
+        }
+
+        /// <summary>Shared by normal and bonus visits: increment, log, notify observers.</summary>
+        private void AddVisit(string zoneID, string logLabel)
+        {
             visitCounts.TryGetValue(zoneID, out int count);
             count++;
             visitCounts[zoneID] = count;
 
             if (showDebugMessages)
-                Debug.Log($"Zone '{zoneID}' visited. Total visits: {count}");
+                Debug.Log($"Zone '{zoneID}' {logLabel}. Total visits: {count}");
 
             // Notify all observers (buildings, achievements, UI...)
             OnZoneVisited?.Invoke(zoneID, count);
-            return true;
         }
 
         /// <summary>Seconds until an entry to this zone would count again (0 = now). For debug display.</summary>
