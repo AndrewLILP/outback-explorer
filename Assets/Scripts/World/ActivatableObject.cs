@@ -116,21 +116,19 @@ private void Awake()
                     Debug.Log($"{gameObject.name} subscribed to VisitManager");
             }
         }
-
         private void OnDisable()
         {
-            // Unsubscribe from events
-            // Check both instance and if application is quitting
-            if (!isQuitting && VisitManager.Instance != null)
+            // ExistingInstance (not Instance): never create a manager just to unsubscribe from it.
+            VisitManager manager = VisitManager.ExistingInstance;
+            if (!isQuitting && manager != null)
             {
-                VisitManager.Instance.OnZoneVisited -= HandleZoneVisited;
-                VisitManager.Instance.OnVisitDataLoaded -= HandleVisitDataLoaded;
+                manager.OnZoneVisited -= HandleZoneVisited;
+                manager.OnVisitDataLoaded -= HandleVisitDataLoaded;
 
                 if (showDebugMessages)
                     Debug.Log($"{gameObject.name} unsubscribed from VisitManager");
             }
         }
-
         private void OnApplicationQuit()
         {
             isQuitting = true;

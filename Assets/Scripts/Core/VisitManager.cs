@@ -13,6 +13,12 @@ namespace RelaxingDrive.Core
     {
         // Singleton instance
         private static VisitManager instance;
+
+                /// <summary>
+        /// Returns the manager only if it already exists — never creates one.
+        /// Use in OnDisable/OnDestroy: creating a manager during scene teardown leaves orphans behind.
+        /// </summary>
+        public static VisitManager ExistingInstance => instance;
         private static bool isQuitting = false;
 
         
@@ -42,6 +48,8 @@ namespace RelaxingDrive.Core
                 return instance;
             }
         }
+
+
 
         [Header("Debug")]
         [SerializeField] private bool showDebugMessages = true;
