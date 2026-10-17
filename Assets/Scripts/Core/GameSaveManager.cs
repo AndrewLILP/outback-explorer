@@ -23,6 +23,16 @@ namespace RelaxingDrive.Core
     {
         #region Singleton Pattern
 
+                /// <summary>
+        /// True once the startup load attempt has finished, whatever the outcome
+        /// (save loaded, no save file, or an error). Other systems wait on this so they
+        /// don't change game state before the save is applied.
+        /// </summary>
+        public bool HasCompletedInitialLoad { get; private set; }
+
+        /// <summary>Fired once when the startup load finishes. For systems that prefer events over polling.</summary>
+        public event System.Action OnInitialLoadComplete;
+
         private static GameSaveManager instance;
         private static bool isQuitting = false;
 
@@ -102,6 +112,11 @@ namespace RelaxingDrive.Core
 
             // Auto-load save file on game start
             Load();
+
+            // Load() catches its own errors and returns on every path, so reaching
+            // this line means the game state is final - safe to start recording visits.
+            HasCompletedInitialLoad = true;
+            OnInitialLoadComplete?.Invoke();
         }
 
         private void Update()
@@ -260,6 +275,8 @@ namespace RelaxingDrive.Core
         /// <summary>
         /// Deletes the save file
         /// </summary>
+        /// 
+        
         public void DeleteSave()
         {
             if (File.Exists(saveFilePath))
@@ -426,6 +443,13 @@ namespace RelaxingDrive.Core
             Debug.Log("========================================");
 
             // Step 1: Delete save file
+
+                        // Stop OnDestroy() from saving while we tear down for a new game.
+            // (It reuses the quit flag: "a save is not wanted on destroy".)
+            hasSavedOnQuit = true;
+
+            // Step 1: Delete save file
+            
             DeleteSave();
 
             // Step 2: Reset all manager states

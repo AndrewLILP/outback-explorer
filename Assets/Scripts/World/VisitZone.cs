@@ -52,6 +52,10 @@ namespace RelaxingDrive.World
         [Tooltip("If the player is already inside when the scene starts (spawn or save load), should that count as a visit?")]
         [SerializeField] private bool countPresenceAtStart = false;
 
+        [Tooltip("Seconds to wait after the player first appears before the first presence check. " +
+                 "Lets a freshly spawned car drop/settle so it isn't counted as 'driving in'. Raise if you still see a visit at startup.")]
+        [SerializeField, Min(0f)] private float startupSettleTime = 1f;
+
         [Header("Debug")]
         [SerializeField] private bool showDebugMessages = true;
 
@@ -71,6 +75,7 @@ namespace RelaxingDrive.World
         private float checkTimer;
         private float nextProviderSearchTime;
         private bool warnedNoProvider;
+        private float playerFirstSeenTime = -1f; // -1 = player not seen yet
 
         private const float ProviderSearchRetrySeconds = 2f;
 
@@ -108,6 +113,7 @@ namespace RelaxingDrive.World
             // the next check treats it like scene start (no free visit).
             isPlayerInside = false;
             hasCheckedOnce = false;
+            playerFirstSeenTime = -1f;
         }
 
         private void OnValidate()
@@ -126,8 +132,20 @@ namespace RelaxingDrive.World
 
         private void CheckPresence()
         {
+            // GATE 1 — Initialisation order.
+            // Don't record anything until the save file has been applied, otherwise
+            // LoadVisitData() would overwrite (and lose) visits recorded before it.
+            if (!IsSaveLoaded()) return;
+
             Transform player = GetActivePlayerTransform();
             if (player == null) return; // e.g. RCC car hasn't spawned yet
+
+            // GATE 2 — Let the spawned car settle before the very first check.
+            if (!hasCheckedOnce)
+            {
+                if (playerFirstSeenTime < 0f) playerFirstSeenTime = Time.time;
+                if (Time.time - playerFirstSeenTime < startupSettleTime) return;
+            }
 
             float distanceOutside = DistanceOutsideZone(player.position);
             bool isWithin = distanceOutside <= 0f;
@@ -190,6 +208,22 @@ namespace RelaxingDrive.World
                 Debug.Log($"[VisitZone] Player left '{zoneID}'", this);
 
             OnPlayerExited?.Invoke(this);
+        }
+
+        #endregion
+
+        #region Startup Gating
+
+        /// <summary>
+        /// True once GameSaveManager has finished its startup load (save found, no save, or error).
+        /// Note: asking for GameSaveManager.Instance also CREATES the manager if the scene doesn't
+        /// have one, which guarantees the save actually loads at startup instead of whenever
+        /// something happens to touch it first.
+        /// </summary>
+        private static bool IsSaveLoaded()
+        {
+            GameSaveManager saveManager = GameSaveManager.Instance;
+            return saveManager != null && saveManager.HasCompletedInitialLoad;
         }
 
         #endregion
