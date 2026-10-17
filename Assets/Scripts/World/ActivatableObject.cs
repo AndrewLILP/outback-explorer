@@ -53,7 +53,7 @@ namespace RelaxingDrive.World
         public bool IsActive => isActive;
         public string BuildingID => buildingID;
         /// <summary>The zone key this object listens for. Prefers the ZoneData asset; falls back to the legacy string.</summary>
-        public string TargetZoneID => targetZone != null ? targetZone.ZoneID : TargetZoneID;
+        public string TargetZoneID => targetZone != null ? targetZone.ZoneID : targetZoneID;
 
         /// <summary>
         /// Defines how the object appears when activated.
@@ -110,6 +110,7 @@ private void Awake()
             if (VisitManager.Instance != null)
             {
                 VisitManager.Instance.OnZoneVisited += HandleZoneVisited;
+                VisitManager.Instance.OnVisitDataLoaded += HandleVisitDataLoaded;
 
                 if (showDebugMessages)
                     Debug.Log($"{gameObject.name} subscribed to VisitManager");
@@ -123,6 +124,7 @@ private void Awake()
             if (!isQuitting && VisitManager.Instance != null)
             {
                 VisitManager.Instance.OnZoneVisited -= HandleZoneVisited;
+                VisitManager.Instance.OnVisitDataLoaded -= HandleVisitDataLoaded;
 
                 if (showDebugMessages)
                     Debug.Log($"{gameObject.name} unsubscribed from VisitManager");
@@ -180,6 +182,26 @@ private void Awake()
                 }
 
                 Activate();
+            }
+        }
+
+                /// <summary>
+        /// Called when saved visit counts are loaded. Restores this object instantly
+        /// (no animation) if its threshold is already met, regardless of whether
+        /// Start() ran before or after the load.
+        /// </summary>
+        private void HandleVisitDataLoaded()
+        {
+            if (isActive || isActivating)
+                return;
+
+            if (VisitManager.Instance.GetVisitCount(TargetZoneID) >= requiredVisits)
+            {
+                ActivateInstant();
+                NotifySaveManager(); // keep the save's building list in sync
+
+                if (showDebugMessages)
+                    Debug.Log($"{gameObject.name} restored from loaded visit data");
             }
         }
 

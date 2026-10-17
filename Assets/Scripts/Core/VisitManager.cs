@@ -52,6 +52,8 @@ namespace RelaxingDrive.Core
         // Event system for Observer pattern
         // Other systems can subscribe to be notified when a zone is visited
         public event Action<string, int> OnZoneVisited;
+                /// <summary>Fired after saved visit counts are applied, so listeners can re-check thresholds.</summary>
+        public event Action OnVisitDataLoaded;
 
         private void Awake()
         {
@@ -137,6 +139,8 @@ namespace RelaxingDrive.Core
             {
                 Debug.Log($"Loaded visit data for {visitCounts.Count} zones.");
             }
+
+            OnVisitDataLoaded?.Invoke();
         }
 
         /// <summary>
