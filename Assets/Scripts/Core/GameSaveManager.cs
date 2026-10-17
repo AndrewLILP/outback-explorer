@@ -69,7 +69,6 @@ namespace RelaxingDrive.Core
         [SerializeField] private float autoSaveInterval = 120f; // 2 minutes
 
         [Header("Debug Settings")]
-        [SerializeField] private bool enableDebugKeys = true;
         [SerializeField] private bool showDebugLogs = true;
 
         #endregion
@@ -133,11 +132,7 @@ namespace RelaxingDrive.Core
                 }
             }
 
-            // Debug keys for testing
-            if (enableDebugKeys)
-            {
-                HandleDebugKeys();
-            }
+            
         }
 
         private void OnApplicationQuit()
@@ -176,8 +171,8 @@ namespace RelaxingDrive.Core
             Debug.Log("[GameSaveManager] Initialized");
             Debug.Log("[GameSaveManager] Save file path: " + saveFilePath);
             Debug.Log($"[GameSaveManager] Auto-save: {(enableAutoSave ? "Enabled" : "Disabled")} ({autoSaveInterval}s interval)");
-            Debug.Log($"[GameSaveManager] Debug keys: {(enableDebugKeys ? "Enabled" : "Disabled")} (F5=Save, F6=Load, F7=Delete, F8=NewGame)");
-        }
+            
+            }
 
         #endregion
 
@@ -514,35 +509,5 @@ namespace RelaxingDrive.Core
 
         #endregion
 
-        #region Debug Keys
-
-        private void HandleDebugKeys()
-        {
-            if (Input.GetKeyDown(KeyCode.F5))
-            {
-                Debug.Log("[GameSaveManager] F5 pressed - Manual save");
-                Save();
-            }
-
-            if (Input.GetKeyDown(KeyCode.F6))
-            {
-                Debug.Log("[GameSaveManager] F6 pressed - Manual load");
-                Load();
-            }
-
-            if (Input.GetKeyDown(KeyCode.F7))
-            {
-                Debug.Log("[GameSaveManager] F7 pressed - Delete save");
-                DeleteSave();
-            }
-
-            if (Input.GetKeyDown(KeyCode.F8))
-            {
-                Debug.Log("[GameSaveManager] F8 pressed - Start new game");
-                StartNewGame();
-            }
-        }
-
-        #endregion
     }
 }
