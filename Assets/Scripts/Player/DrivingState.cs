@@ -68,7 +68,8 @@ namespace RelaxingDrive.Player
 
         public override void Update()
         {
-            if (Input.GetKeyDown(KeyCode.E))
+               // E or A - the Input Actions asset merges keyboard and gamepad into one action
+            if (PlayerInputReader.InteractPressedThisFrame)
                 ExitCar();
         }
 

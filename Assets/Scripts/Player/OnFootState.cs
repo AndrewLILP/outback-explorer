@@ -1,4 +1,5 @@
 // OnFootState.cs
+// Location: Assets/Scripts/Player/OnFootState.cs
 using UnityEngine;
 using RelaxingDrive.World;
 using StarterAssets;
@@ -16,6 +17,8 @@ namespace RelaxingDrive.Player
     ///   This state only handles car proximity/interaction and the camera handoff.
     /// - Legacy hand-rolled CharacterController movement (PolyStang/Itch scene) -
     ///   unchanged, drives movement itself and uses FollowCamera.
+    ///
+    /// Car entry uses the Interact action (E / gamepad A) via PlayerInputReader.
     /// </summary>
     public class OnFootState : PlayerState
     {
@@ -24,7 +27,7 @@ namespace RelaxingDrive.Player
         private UI.InteractionPromptUI interactionPrompt;
         private bool usesExternalController;
 
-        // Movement settings
+        // Movement settings (legacy path only)
         private float moveSpeed = 5f;
         private float turnSpeed = 10f;
         private float gravity = -9.81f;
@@ -152,6 +155,11 @@ namespace RelaxingDrive.Player
             HandleCarInteraction();
         }
 
+        /// <summary>
+        /// LEGACY PATH ONLY (itch.io / PolyStang scene). Never runs in the Steam scene,
+        /// where Starter Assets handles walking. Still uses legacy Input.GetAxis -
+        /// to be removed with the legacy path in Story #6 clean-up.
+        /// </summary>
         private void HandleMovement()
         {
             // Get input
@@ -229,10 +237,12 @@ namespace RelaxingDrive.Player
 
         private void HandleCarInteraction()
         {
-            // Press E to enter car
-            if (isNearCar && Input.GetKeyDown(KeyCode.E))
+            // Interact (E or gamepad A) to enter car.
+            // PlayerInputReader merges keyboard and gamepad into one action,
+            // so this state doesn't care which device was used.
+            if (isNearCar && PlayerInputReader.InteractPressedThisFrame)
             {
-                Debug.Log("[OnFootState] E pressed near car - entering car");
+                Debug.Log("[OnFootState] Interact pressed near car - entering car");
                 HideCarInteractionPrompt();
                 stateManager.SwitchToDriving();
             }
@@ -242,6 +252,7 @@ namespace RelaxingDrive.Player
         {
             if (interactionPrompt != null)
             {
+                // Still hard-coded "E" - input-aware prompts are the next story
                 interactionPrompt.ShowPrompt("Press E to Enter Car");
                 Debug.Log("[OnFootState] Showing car interaction prompt");
             }
