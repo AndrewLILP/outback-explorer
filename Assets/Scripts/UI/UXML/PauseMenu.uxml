@@ -1,30 +1,79 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/UI/USS/PauseMenu.uss?fileID=7433441132597879392&amp;guid=506e40e6f1553454fbea0aa36d892dee&amp;type=3#PauseMenu"/>
     <ui:VisualElement name="PauseRoot" class="pause-menu">
+
+        <!-- Main menu. Button order here = up/down navigation order. -->
         <ui:VisualElement name="PauseContainer" class="pause-container">
             <ui:Label text="Paused" class="pause-title"/>
             <ui:Button name="ResumeButton" text="Resume" class="pause-button"/>
             <ui:Button name="SaveButton" text="Save game" class="pause-button"/>
-            <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
-            <ui:Button name="ChangeCarsButton" text="Change car" class="pause-button"/>
             <ui:Button name="InstructionsButton" text="How to play" class="pause-button"/>
+            <ui:Button name="SettingsButton" text="Settings" class="pause-button"/>
+            <ui:Button name="ChangeCarsButton" text="Change car" class="pause-button"/>
+            <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
+            <ui:Button name="QuitButton" text="Quit to desktop" class="pause-button pause-button--quiet"/>
+            <ui:Label text="Esc / B  back" class="pause-hint"/>
         </ui:VisualElement>
+
+        <!-- How to play -->
         <ui:VisualElement name="InstructionsPanel" class="instructions-panel" style="display: none;">
             <ui:Label text="How to play" class="instructions-title"/>
             <ui:VisualElement name="TutorialAnimationSlot" class="tutorial-animation-slot"/>
             <ui:VisualElement class="instructions-content">
-                <ui:Label text="WASD / arrow keys - drive" class="instruction-line"/>
-                <ui:Label text="Space - brake" class="instruction-line"/>
-                <ui:Label text="E - enter / exit car" class="instruction-line"/>
-                <ui:Label text="Mouse - look around" class="instruction-line"/>
-                <ui:Label text="Esc - pause menu" class="instruction-line"/>
+                <ui:Label text="Drive  —  WASD / arrow keys  ·  left stick + triggers" class="instruction-line"/>
+                <ui:Label text="Handbrake  —  Space" class="instruction-line"/>
+                <ui:Label text="Enter / exit car  —  E  ·  A" class="instruction-line"/>
+                <ui:Label text="Look around  —  Mouse  ·  right stick" class="instruction-line"/>
+                <ui:Label text="Pause  —  Esc  ·  Menu" class="instruction-line"/>
                 <ui:Label class="instruction-spacer"/>
-                <ui:Label text="Save / load" class="instruction-line"/>
-                <ui:Label text="F5 - quick save" class="instruction-line"/>
-                <ui:Label text="F6 - quick load" class="instruction-line"/>
-                <ui:Label text="F7 - delete save" class="instruction-line"/>
+                <ui:Label text="Your game saves automatically." class="instruction-line"/>
             </ui:VisualElement>
-            <ui:Button name="CloseInstructionsButton" text="Close" class="pause-button"/>
+            <ui:Button name="CloseInstructionsButton" text="Back" class="pause-button"/>
         </ui:VisualElement>
+
+        <!-- Settings. Each row: label | control | value. Up/down moves between rows,
+             left/right changes the focused slider by one step (10%). -->
+        <ui:VisualElement name="SettingsPanel" class="instructions-panel" style="display: none;">
+            <ui:VisualElement class="pause-container settings-container">
+                <ui:Label text="Settings" class="instructions-title"/>
+
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="Master volume" class="settings-label"/>
+                    <ui:SliderInt name="MasterSlider" low-value="0" high-value="10" value="10" class="settings-slider"/>
+                    <ui:Label name="MasterValue" text="100%" class="settings-value"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="Music volume" class="settings-label"/>
+                    <ui:SliderInt name="MusicSlider" low-value="0" high-value="10" value="7" class="settings-slider"/>
+                    <ui:Label name="MusicValue" text="70%" class="settings-value"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="Sound effects" class="settings-label"/>
+                    <ui:SliderInt name="SfxSlider" low-value="0" high-value="10" value="10" class="settings-slider"/>
+                    <ui:Label name="SfxValue" text="100%" class="settings-value"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="Fullscreen" class="settings-label"/>
+                    <ui:Toggle name="FullscreenToggle" value="true" class="settings-toggle"/>
+                    <ui:Label name="FullscreenValue" text="On" class="settings-value"/>
+                </ui:VisualElement>
+
+                <ui:Button name="CloseSettingsButton" text="Back" class="pause-button settings-back"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- New game confirmation (destructive action, so ask first) -->
+        <ui:VisualElement name="ConfirmPanel" class="instructions-panel" style="display: none;">
+            <ui:VisualElement class="pause-container">
+                <ui:Label text="Start a new game?" class="instructions-title"/>
+                <ui:Label text="Your current progress will be lost." class="confirm-text"/>
+                <ui:Button name="ConfirmCancelButton" text="Keep playing" class="pause-button"/>
+                <ui:Button name="ConfirmNewGameButton" text="Start new game" class="pause-button pause-button--danger"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

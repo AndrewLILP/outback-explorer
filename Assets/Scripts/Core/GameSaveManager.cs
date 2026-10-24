@@ -1,13 +1,17 @@
 ﻿// GameSaveManager.cs
+// Location: Assets/Scripts/Core/GameSaveManager.cs
 // Singleton manager for saving and loading game state
 // Uses JsonUtility for serialization and works with GameSaveData.cs
-// 
-// BUG FIX: StartNewGame() now destroys DontDestroyOnLoad singletons before scene reload
+//
+// BUG FIX: StartNewGame() destroys DontDestroyOnLoad singletons before scene reload
+// BUG FIX: StartNewGame(sceneToLoad) lets the pause menu reload the GAMEPLAY scene
+//          (from PauseMenuScene, the active scene is the pause scene, not gameplay)
 
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using RelaxingDrive.Core;
 using RelaxingDrive.World;
 using RelaxingDrive.Animals;
@@ -17,13 +21,13 @@ namespace RelaxingDrive.Core
     /// <summary>
     /// Central manager for saving and loading game state.
     /// Singleton pattern ensures only one instance exists.
-    /// Handles auto-save, manual save, and debug save/load features.
+    /// Handles auto-save, save on quit, load on start, and new game.
     /// </summary>
     public class GameSaveManager : MonoBehaviour
     {
         #region Singleton Pattern
 
-                /// <summary>
+        /// <summary>
         /// True once the startup load attempt has finished, whatever the outcome
         /// (save loaded, no save file, or an error). Other systems wait on this so they
         /// don't change game state before the save is applied.
@@ -131,8 +135,6 @@ namespace RelaxingDrive.Core
                     autoSaveTimer = 0f;
                 }
             }
-
-            
         }
 
         private void OnApplicationQuit()
@@ -167,12 +169,11 @@ namespace RelaxingDrive.Core
         private void Initialize()
         {
             saveFilePath = Path.Combine(Application.persistentDataPath, "outback_save.json");
-            
+
             Debug.Log("[GameSaveManager] Initialized");
             Debug.Log("[GameSaveManager] Save file path: " + saveFilePath);
             Debug.Log($"[GameSaveManager] Auto-save: {(enableAutoSave ? "Enabled" : "Disabled")} ({autoSaveInterval}s interval)");
-            
-            }
+        }
 
         #endregion
 
@@ -270,8 +271,6 @@ namespace RelaxingDrive.Core
         /// <summary>
         /// Deletes the save file
         /// </summary>
-        /// 
-        
         public void DeleteSave()
         {
             if (File.Exists(saveFilePath))
@@ -428,23 +427,30 @@ namespace RelaxingDrive.Core
         #region New Game / Reset
 
         /// <summary>
-        /// Starts a completely new game by deleting save file and reloading scene
-        /// 🔧 BUG FIX: Now destroys DontDestroyOnLoad singletons before scene reload
+        /// Starts a completely new game: deletes the save file, resets managers,
+        /// destroys DontDestroyOnLoad singletons and reloads a scene.
         /// </summary>
-        public void StartNewGame()
+        /// <param name="sceneToLoad">
+        /// Scene to load afterwards. Leave empty to reload the active scene
+        /// (NewGameHotkey, used during gameplay). The pause menu passes the
+        /// gameplay scene name, because there the active scene is PauseMenuScene.
+        /// </param>
+        public void StartNewGame(string sceneToLoad = null)
         {
             Debug.Log("========================================");
             Debug.Log("[GameSaveManager] STARTING NEW GAME");
             Debug.Log("========================================");
 
-            // Step 1: Delete save file
-
-                        // Stop OnDestroy() from saving while we tear down for a new game.
+            // Stop OnDestroy() from saving while we tear down for a new game.
             // (It reuses the quit flag: "a save is not wanted on destroy".)
             hasSavedOnQuit = true;
 
+            // Decide the scene BEFORE tearing anything down.
+            string sceneName = string.IsNullOrEmpty(sceneToLoad)
+                ? SceneManager.GetActiveScene().name
+                : sceneToLoad;
+
             // Step 1: Delete save file
-            
             DeleteSave();
 
             // Step 2: Reset all manager states
@@ -453,7 +459,7 @@ namespace RelaxingDrive.Core
             // Step 3: Clear runtime tracking
             activatedBuildingsRuntime.Clear();
 
-            // Step 4: 🔧 FIX - Destroy DontDestroyOnLoad singletons to prevent duplicates
+            // Step 4: Destroy DontDestroyOnLoad singletons to prevent duplicates
             Debug.Log("[GameSaveManager] Destroying persistent singletons before reload...");
 
             // Destroy VisitManager
@@ -474,11 +480,9 @@ namespace RelaxingDrive.Core
             Debug.Log("[GameSaveManager] - Destroying GameSaveManager");
             Destroy(gameObject);
 
-            // Step 5: Reload current scene
-            Debug.Log("[GameSaveManager] Reloading scene for fresh start...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene(
-                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
-            );
+            // Step 5: Load the chosen scene fresh
+            Debug.Log($"[GameSaveManager] Loading '{sceneName}' for fresh start...");
+            SceneManager.LoadScene(sceneName);
 
             Debug.Log("[GameSaveManager] ✅ New game started successfully!");
         }
@@ -508,6 +512,5 @@ namespace RelaxingDrive.Core
         }
 
         #endregion
-
     }
 }

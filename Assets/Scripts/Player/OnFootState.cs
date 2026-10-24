@@ -9,7 +9,7 @@ namespace RelaxingDrive.Player
     /// <summary>
     /// State when player is walking around (not in car).
     /// Handles character controller movement and interaction detection.
-    /// Shows "Press E to Enter Car" prompt when near car.
+    /// Shows an input-aware "[E] / (A) Enter Car" prompt when near car.
     ///
     /// Supports two walking-controller paths:
     /// - Starter Assets ThirdPersonController (RCC/Steam scene) - that component
@@ -44,6 +44,11 @@ namespace RelaxingDrive.Player
         public override void Enter()
         {
             Debug.Log("[OnFootState] ========== ENTERING ON FOOT STATE ==========");
+
+            // This state object is REUSED every time the player gets out of the car,
+            // so reset per-visit fields. Otherwise isNearCar is still true from last
+            // time, CheckCarProximity sees no change, and the prompt never shows.
+            isNearCar = false;
 
             // Detect which walking controller this scene's playerCharacter uses.
             // Starter Assets' ThirdPersonController owns its own CharacterController,
@@ -252,8 +257,8 @@ namespace RelaxingDrive.Player
         {
             if (interactionPrompt != null)
             {
-                // Still hard-coded "E" - input-aware prompts are the next story
-                interactionPrompt.ShowPrompt("Press E to Enter Car");
+                // Action text only - InteractionPromptUI adds the E / A keycap itself
+                interactionPrompt.ShowPrompt("Enter Car");
                 Debug.Log("[OnFootState] Showing car interaction prompt");
             }
         }

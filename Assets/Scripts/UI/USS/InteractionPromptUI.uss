@@ -1,0 +1,69 @@
+/* InteractionPromptUI.uss
+   Location: Assets/UI/USS/InteractionPromptUI.uss
+   Used by InteractionPromptUI.cs (elements are built in code).
+
+   Sizes are in reference pixels. Panel Settings reference = 1280x800,
+   so 18px here = 18px on Steam Deck (Valve minimum ~9px, our target 12px+).
+   At 1920x1080 everything scales up x1.35 automatically. */
+
+/* Full-width strip near the bottom; centres the box horizontally. */
+.sd-prompt {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14%;
+    align-items: center;
+}
+
+/* Dark rounded pill holding keycap + text. */
+.sd-prompt__box {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(18, 20, 26, 0.85);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 8px 18px 8px 10px;
+}
+
+/* Shared keycap. */
+.sd-prompt__key {
+    height: 32px;
+    min-width: 32px;
+    margin: 0 12px 0 0;
+    padding: 0 8px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* Keyboard: light square keycap. */
+.sd-prompt__key--keyboard {
+    color: rgb(30, 30, 30);
+    background-color: rgb(236, 236, 236);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* Gamepad: round button. Green matches the A button on Xbox / Steam Deck pads. */
+.sd-prompt__key--gamepad {
+    width: 32px;
+    padding: 0;
+    color: rgb(255, 255, 255);
+    background-color: rgb(84, 160, 78);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+/* Action text, e.g. "Enter Car". */
+.sd-prompt__text {
+    font-size: 18px;
+    color: rgb(255, 255, 255);
+    padding: 0;
+    margin: 0;
+}

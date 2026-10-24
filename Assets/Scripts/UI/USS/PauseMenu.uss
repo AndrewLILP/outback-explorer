@@ -1,6 +1,12 @@
 /* PauseMenu.uss - same warm "field journal" palette as HUD.uss.
-   This is now the only UI in PauseMenuScene, so the root fills the screen
-   and provides its own dim backdrop (no separate "hud-container" needed). */
+   This is the only UI in PauseMenuScene, so the root fills the screen
+   and provides its own dim backdrop.
+
+   Sizes are reference pixels (Panel Settings reference 1280x800),
+   so they equal Steam Deck pixels. Smallest text here is 13px.
+
+   :focus is the ONE highlight state - mouse hover moves focus in code,
+   so keyboard, gamepad and mouse all look the same. */
 
 .pause-menu {
     position: absolute;
@@ -14,7 +20,7 @@
 .pause-container {
     background-color: rgba(44, 38, 28, 0.95);
     border-radius: 16px;
-    padding: 40px;
+    padding: 32px 40px;
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.5);
     min-width: 360px;
@@ -22,36 +28,67 @@
 }
 
 .pause-title {
-    font-size: 36px;
+    font-size: 34px;
     color: rgb(238, 230, 214);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
+
+/* ---------- Buttons ---------- */
 
 .pause-button {
     width: 280px;
-    height: 46px;
-    margin: 8px;
+    height: 44px;
+    margin: 6px;
     background-color: rgba(196, 110, 58, 0.25);
     border-radius: 999px;
-    border-width: 1px;
-    border-color: rgba(196, 164, 105, 0.55);
+    border-width: 2px;
+    border-color: rgba(196, 164, 105, 0.45);
     color: rgb(238, 230, 214);
-    font-size: 16px;
-    transition-duration: 0.15s;
+    font-size: 17px;
+    transition-duration: 0.12s;
 }
 
-.pause-button:hover {
-    background-color: rgba(196, 110, 58, 0.4);
-    border-color: rgba(196, 164, 105, 0.9);
-    scale: 1.03;
-}
-
-.pause-button:active {
+/* Focused = highlighted (keyboard, gamepad, AND mouse hover). */
+.pause-button:focus {
     background-color: rgba(196, 110, 58, 0.55);
+    border-color: rgb(238, 205, 140);
+    color: rgb(255, 250, 240);
+    scale: 1.04;
+}
+
+/* Pressed (mouse down, or Submit held). */
+.pause-button:active {
+    background-color: rgba(196, 110, 58, 0.75);
     scale: 0.97;
 }
+
+/* Less prominent: Quit sits apart from the main actions. */
+.pause-button--quiet {
+    margin-top: 16px;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Destructive: Start new game in the confirm panel. */
+.pause-button--danger {
+    background-color: rgba(170, 60, 45, 0.3);
+    border-color: rgba(210, 120, 100, 0.5);
+}
+
+.pause-button--danger:focus {
+    background-color: rgba(170, 60, 45, 0.65);
+    border-color: rgb(240, 160, 140);
+}
+
+.pause-hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: rgba(196, 180, 150, 0.7);
+    -unity-text-align: middle-center;
+}
+
+/* ---------- Full-screen sub-panels (How to play, Settings, Confirm) ---------- */
 
 .instructions-panel {
     position: absolute;
@@ -67,7 +104,7 @@
     color: rgb(238, 230, 214);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .tutorial-animation-slot {
@@ -75,24 +112,111 @@
     height: 180px;
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .instructions-content {
     background-color: rgba(30, 26, 19, 0.9);
     border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
-    min-width: 340px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    min-width: 420px;
 }
 
 .instruction-line {
-    font-size: 15px;
-    color: rgba(196, 180, 150, 0.9);
-    margin: 6px 0;
+    font-size: 16px;
+    color: rgba(214, 198, 168, 0.95);
+    margin: 5px 0;
     -unity-text-align: middle-left;
 }
 
 .instruction-spacer {
-    height: 12px;
+    height: 10px;
+}
+
+/* ---------- Settings ---------- */
+
+.settings-container {
+    min-width: 600px;
+}
+
+/* One row per setting. Highlighted (from code) while its control is focused,
+   matching the button :focus look. */
+.settings-row {
+    flex-direction: row;
+    align-items: center;
+    width: 540px;
+    height: 54px;
+    margin: 3px 0;
+    padding: 0 14px;
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.settings-row--focused {
+    background-color: rgba(196, 110, 58, 0.3);
+    border-color: rgb(238, 205, 140);
+}
+
+/* Light cream on the dark panel - same colour as the title, so it reads clearly. */
+.settings-label {
+    width: 170px;
+    font-size: 19px;
+    color: rgb(238, 230, 214);
+    -unity-text-align: middle-left;
+}
+
+.settings-slider {
+    flex-grow: 1;
+    margin: 0 14px;
+}
+
+/* Slider parts (Unity's built-in class names). Colours only - sizes are left to
+   the default theme so the dragger stays centred on the track. */
+.settings-slider .unity-base-slider__tracker {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-color: rgba(196, 164, 105, 0.45);
+}
+
+.settings-slider .unity-base-slider__dragger {
+    background-color: rgb(238, 205, 140);
+    border-color: rgb(196, 140, 80);
+}
+
+.settings-toggle {
+    flex-grow: 1;
+    margin: 0 14px;
+}
+
+.settings-toggle .unity-toggle__checkmark {
+    width: 28px;
+    height: 28px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-color: rgba(196, 164, 105, 0.6);
+    border-radius: 6px;
+}
+
+.settings-toggle:checked .unity-toggle__checkmark {
+    background-color: rgb(196, 110, 58);
+    -unity-background-image-tint-color: rgb(255, 250, 240);
+}
+
+.settings-value {
+    width: 60px;
+    font-size: 19px;
+    color: rgb(238, 205, 140);
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.settings-back {
+    margin-top: 14px;
+}
+
+.confirm-text {
+    font-size: 16px;
+    color: rgba(214, 198, 168, 0.95);
+    -unity-text-align: middle-center;
+    margin-bottom: 16px;
 }

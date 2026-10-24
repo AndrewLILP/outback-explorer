@@ -8,14 +8,14 @@
 //   - Keyboard (E / Esc) and gamepad (A / Start) are already merged into one
 //     action each by the Input Actions asset, so no other script needs to know
 //     which device was used.
-//   - Later, input-aware prompts ("E" vs "A") will ask this class which control
-//     scheme is active - one source of truth.
+//   - It also tracks which device the player is CURRENTLY using, so prompts
+//     can show "E" or "A" (Steam Deck Verified requirement).
 //
-// Two ways to read input, matching how each kind of caller works:
+// Ways to read input, matching how each kind of caller works:
 //   1. POLLING  - InteractPressedThisFrame. For plain C# classes that already run
 //                 in an Update() loop, like DrivingState and OnFootState.
-//   2. EVENTS   - OnPausePressed (Observer pattern). For MonoBehaviours that just
-//                 want to be told "pause was pressed", like PauseFlowManager.
+//   2. EVENTS   - OnPausePressed, OnDeviceChanged (Observer pattern). For
+//                 MonoBehaviours that want to be told when something happens.
 //
 // Single Responsibility: this class reads input and reports it. It never
 // enters cars, pauses the game or shows UI.
@@ -23,6 +23,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using RelaxingDrive.Controls;
 
 namespace RelaxingDrive.Player
@@ -41,9 +42,20 @@ namespace RelaxingDrive.Player
         /// <summary>Fired once when Pause is pressed (Esc on keyboard, Start / Menu on gamepad).</summary>
         public event Action OnPausePressed;
 
+        /// <summary>Fired when the player switches between keyboard/mouse and gamepad.</summary>
+        public event Action<InputDeviceType> OnDeviceChanged;
+
         #endregion
 
         #region Inspector Settings
+
+        [Header("Device Detection")]
+        [Tooltip("If ON, moving the mouse switches prompts to keyboard. Leave OFF for Steam Deck: " +
+                 "its trackpads can act as a mouse, and a light touch would flip prompts back and forth.")]
+        [SerializeField] private bool mouseMovementSwitchesToKeyboard = false;
+
+        [Tooltip("How far (pixels in one frame) the mouse must move to count, if the option above is ON.")]
+        [SerializeField] private float mouseMoveThreshold = 5f;
 
         [Header("Debug")]
         [SerializeField] private bool showDebugLogs = false;
@@ -55,6 +67,8 @@ namespace RelaxingDrive.Player
         // The C# class Unity generated from SundayDriveControls.inputactions.
         // Never edit that generated file - change the .inputactions asset instead.
         private SundayDriveControls controls;
+
+        private InputDeviceType currentDevice;
 
         #endregion
 
@@ -69,6 +83,17 @@ namespace RelaxingDrive.Player
             Instance != null &&
             Instance.controls != null &&
             Instance.controls.GamePlay.Interact.WasPressedThisFrame();
+
+        /// <summary>The device the player used most recently.</summary>
+        public InputDeviceType CurrentDevice => currentDevice;
+
+        /// <summary>
+        /// The key/button name for Interact on the CURRENT device, read from the
+        /// Input Actions asset (e.g. "E" on keyboard, "A" on gamepad).
+        /// Because it reads the bindings, changing a binding in the asset updates
+        /// every prompt automatically - no hard-coded "E" anywhere.
+        /// </summary>
+        public string InteractLabel => GetBindingLabel(controls?.GamePlay.Interact);
 
         #endregion
 
@@ -87,7 +112,12 @@ namespace RelaxingDrive.Player
 
             Instance = this;
             controls = new SundayDriveControls();
-            Log("Created SundayDriveControls");
+
+            // Starting guess: if a gamepad is connected, assume the player uses it.
+            // On Steam Deck this means gamepad prompts from the very first frame.
+            // On a PC, the first key press corrects it.
+            currentDevice = Gamepad.current != null ? InputDeviceType.Gamepad : InputDeviceType.KeyboardMouse;
+            Log($"Created SundayDriveControls. Starting device: {currentDevice}");
         }
 
         private void OnEnable()
@@ -112,6 +142,12 @@ namespace RelaxingDrive.Player
             Log("GamePlay actions disabled");
         }
 
+        private void Update()
+        {
+            if (controls == null) return;
+            DetectActiveDevice();
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
@@ -124,6 +160,106 @@ namespace RelaxingDrive.Player
             // (which always runs before OnDestroy) disables it first.
             controls?.Dispose();
             controls = null;
+        }
+
+        #endregion
+
+        #region Device Detection
+
+        /// <summary>
+        /// Each frame, checks whether the player deliberately used a different device.
+        /// "Deliberately" matters: stick drift or a resting thumb on a trackpad must
+        /// NOT flip the prompts, or they'd flicker between E and A.
+        /// </summary>
+        private void DetectActiveDevice()
+        {
+            InputDeviceType detected = currentDevice;
+
+            if (GamepadWasUsedThisFrame())
+            {
+                detected = InputDeviceType.Gamepad;
+            }
+            else if (KeyboardOrMouseWasUsedThisFrame())
+            {
+                detected = InputDeviceType.KeyboardMouse;
+            }
+
+            if (detected == currentDevice) return;
+
+            currentDevice = detected;
+            Log($"Device changed → {currentDevice} (Interact = {InteractLabel})");
+            OnDeviceChanged?.Invoke(currentDevice);
+        }
+
+        private bool GamepadWasUsedThisFrame()
+        {
+            Gamepad pad = Gamepad.current;
+
+            // Cheap early-out: nothing on the pad changed this frame.
+            if (pad == null || !pad.wasUpdatedThisFrame) return false;
+
+            // Every face button, shoulder, trigger, d-pad direction AND stick direction
+            // (e.g. leftStick/up) is a ButtonControl with a built-in press threshold
+            // (about halfway). So "was any button pressed this frame?" ignores small
+            // stick drift for free. Looping a ReadOnlyArray doesn't allocate garbage.
+            foreach (InputControl control in pad.allControls)
+            {
+                if (control is ButtonControl button && button.wasPressedThisFrame)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool KeyboardOrMouseWasUsedThisFrame()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.anyKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            Mouse mouse = Mouse.current;
+            if (mouse == null) return false;
+
+            if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            // Optional (off by default) - see the tooltip on mouseMovementSwitchesToKeyboard.
+            if (mouseMovementSwitchesToKeyboard &&
+                mouse.delta.ReadValue().sqrMagnitude > mouseMoveThreshold * mouseMoveThreshold)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
+        #region Binding Labels
+
+        /// <summary>
+        /// Returns the display name of an action's binding for the current device,
+        /// using the control scheme names from the asset ("Keyboard&Mouse" / "GamePad").
+        /// Uses the generated scheme properties, so a typo is a compile error, not a bug.
+        /// </summary>
+        private string GetBindingLabel(InputAction action)
+        {
+            if (action == null || controls == null) return "?";
+
+            string group = currentDevice == InputDeviceType.Gamepad
+                ? controls.GamePadScheme.bindingGroup
+                : controls.KeyboardMouseScheme.bindingGroup;
+
+            // Only look at bindings in that scheme. Unity returns short names where
+            // the device defines them, e.g. "A" for the gamepad's south button.
+            string label = action.GetBindingDisplayString(InputBinding.MaskByGroup(group));
+            return string.IsNullOrEmpty(label) ? "?" : label;
         }
 
         #endregion

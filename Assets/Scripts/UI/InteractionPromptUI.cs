@@ -1,109 +1,97 @@
 // InteractionPromptUI.cs
+// Location: Assets/Scripts/UI/InteractionPromptUI.cs
+//
+// Input-aware interaction prompt (UI Toolkit), e.g.  [E] Enter Car  /  (A) Enter Car
+//
+// How it works:
+//   - Callers pass only the ACTION text:  ShowPrompt("Enter Car")
+//   - This class adds the key/button "keycap" itself, asking PlayerInputReader
+//     for the current device and the label bound to Interact.
+//   - It listens to PlayerInputReader.OnDeviceChanged, so the keycap swaps live
+//     (E <-> A) even while the prompt is on screen.
+//
+// Why callers don't write "Press E":
+//   Only the prompt should know how keys are DISPLAYED. If every caller wrote
+//   "Press E to ...", every caller would need changing for gamepad support.
+//   (Single Responsibility + Open/Closed.)
+//
+// The elements are built in code and styled by InteractionPromptUI.uss, so this
+// component works on any UIDocument (it doesn't need its own UXML).
+
 using UnityEngine;
 using UnityEngine.UIElements;
+using RelaxingDrive.Player;
 
 namespace RelaxingDrive.UI
 {
-    /// <summary>
-    /// Controls the interaction prompt UI that shows messages like "Press E to Enter Car".
-    /// Uses UI Toolkit for rendering.
-    /// </summary>
     public class InteractionPromptUI : MonoBehaviour
     {
+        #region Inspector Settings
+
         [Header("UI Document")]
+        [Tooltip("Leave empty to use the UIDocument on this GameObject.")]
         [SerializeField] private UIDocument uiDocument;
 
-        [Header("UI Element Names")]
-        [SerializeField] private string promptContainerName = "interaction-prompt-container";
-        [SerializeField] private string promptTextName = "prompt-text";
+        [Header("Style")]
+        [Tooltip("Assign InteractionPromptUI.uss")]
+        [SerializeField] private StyleSheet promptStyleSheet;
+
+        [Tooltip("Shown on the keycap if no PlayerInputReader exists in the scene.")]
+        [SerializeField] private string fallbackKeyLabel = "E";
+
+        [Header("Debug")]
+        [SerializeField] private bool showDebugLogs = false;
+
+        #endregion
+
+        #region USS Class Names
+        // Kept as constants so the C# and the .uss file can't drift apart silently.
+
+        private const string ContainerClass = "sd-prompt";
+        private const string BoxClass = "sd-prompt__box";
+        private const string KeyClass = "sd-prompt__key";
+        private const string KeyKeyboardClass = "sd-prompt__key--keyboard";
+        private const string KeyGamepadClass = "sd-prompt__key--gamepad";
+        private const string TextClass = "sd-prompt__text";
+
+        #endregion
+
+        #region Private Fields
 
         private VisualElement promptContainer;
-        private Label promptText;
-        private bool isVisible = false;
+        private Label keyLabel;
+        private Label actionLabel;
 
-        private void Awake()
-        {
-            // Get UI Document if not assigned
-            if (uiDocument == null)
-            {
-                uiDocument = GetComponent<UIDocument>();
-            }
+        private PlayerInputReader inputReader;
+        private bool isVisible;
 
-            if (uiDocument == null)
-            {
-                Debug.LogError("[InteractionPromptUI] No UIDocument found! Add a UIDocument component.");
-                return;
-            }
-        }
+        #endregion
 
-        private void Start()
-        {
-            InitializeUI();
-            HidePrompt(); // Start hidden
-        }
+        #region Public API
 
-        private void InitializeUI()
-        {
-            if (uiDocument == null) return;
-
-            var root = uiDocument.rootVisualElement;
-
-            // Try to find existing elements
-            promptContainer = root.Q<VisualElement>(promptContainerName);
-            promptText = root.Q<Label>(promptTextName);
-
-            // If not found, create them programmatically
-            if (promptContainer == null)
-            {
-                promptContainer = new VisualElement();
-                promptContainer.name = promptContainerName;
-                promptContainer.AddToClassList("interaction-prompt-container");
-                root.Add(promptContainer);
-
-                Debug.Log("[InteractionPromptUI] Created prompt container programmatically");
-            }
-
-            if (promptText == null)
-            {
-                promptText = new Label("Press E");
-                promptText.name = promptTextName;
-                promptText.AddToClassList("prompt-text");
-
-                // Create prompt box
-                var promptBox = new VisualElement();
-                promptBox.AddToClassList("interaction-prompt");
-                promptBox.Add(promptText);
-
-                promptContainer.Add(promptBox);
-
-                Debug.Log("[InteractionPromptUI] Created prompt text programmatically");
-            }
-        }
+        /// <summary>Whether the prompt is currently on screen.</summary>
+        public bool IsVisible => isVisible;
 
         /// <summary>
-        /// Shows the interaction prompt with the specified message.
+        /// Shows the prompt. Pass only the action, e.g. "Enter Car" -
+        /// the keycap (E or A) is added automatically.
         /// </summary>
-        public void ShowPrompt(string message)
+        public void ShowPrompt(string actionText)
         {
-            if (promptText == null)
+            if (promptContainer == null)
             {
-                Debug.LogWarning("[InteractionPromptUI] Cannot show prompt - UI not initialized");
+                Debug.LogWarning("[InteractionPromptUI] Cannot show prompt - UI not built yet.");
                 return;
             }
 
-            promptText.text = message;
+            actionLabel.text = actionText;
+            RefreshKeycap();
 
-            if (promptContainer != null)
-            {
-                promptContainer.style.display = DisplayStyle.Flex;
-            }
-
+            promptContainer.style.display = DisplayStyle.Flex;
             isVisible = true;
         }
 
-        /// <summary>
-        /// Hides the interaction prompt.
-        /// </summary>
+        /// <summary>Hides the prompt.</summary>
         public void HidePrompt()
         {
             if (promptContainer != null)
@@ -114,9 +102,138 @@ namespace RelaxingDrive.UI
             isVisible = false;
         }
 
+        #endregion
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (uiDocument == null)
+            {
+                uiDocument = GetComponent<UIDocument>();
+            }
+
+            if (uiDocument == null)
+            {
+                Debug.LogError("[InteractionPromptUI] No UIDocument assigned or found on this GameObject.");
+            }
+        }
+
+        private void Start()
+        {
+            // Start (not Awake/OnEnable): the UIDocument has built its tree, and
+            // PlayerInputReader.Awake has run, so Instance is set if it exists.
+            BuildUI();
+            HidePrompt();
+
+            inputReader = PlayerInputReader.Instance;
+            if (inputReader != null)
+            {
+                inputReader.OnDeviceChanged += HandleDeviceChanged;
+            }
+            else
+            {
+                Debug.LogWarning("[InteractionPromptUI] No PlayerInputReader in scene - keycap will always show the fallback label.");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (inputReader != null)
+            {
+                inputReader.OnDeviceChanged -= HandleDeviceChanged;
+            }
+        }
+
+        #endregion
+
+        #region Build
+
         /// <summary>
-        /// Returns whether the prompt is currently visible.
+        /// Creates:  container (full width, near bottom)
+        ///             └ box (dark rounded pill)
+        ///                 ├ keycap label  [E] or (A)
+        ///                 └ action label  "Enter Car"
         /// </summary>
-        public bool IsVisible => isVisible;
+        private void BuildUI()
+        {
+            if (uiDocument == null || uiDocument.rootVisualElement == null) return;
+
+            VisualElement root = uiDocument.rootVisualElement;
+
+            if (promptStyleSheet != null)
+            {
+                root.styleSheets.Add(promptStyleSheet);
+            }
+            else
+            {
+                Debug.LogWarning("[InteractionPromptUI] No style sheet assigned - prompt will be unstyled.");
+            }
+
+            promptContainer = new VisualElement { name = "InteractionPrompt" };
+            promptContainer.AddToClassList(ContainerClass);
+
+            // The prompt must never block mouse clicks on other UI underneath it.
+            promptContainer.pickingMode = PickingMode.Ignore;
+
+            VisualElement box = new VisualElement();
+            box.AddToClassList(BoxClass);
+            box.pickingMode = PickingMode.Ignore;
+
+            keyLabel = new Label(fallbackKeyLabel) { name = "PromptKey" };
+            keyLabel.AddToClassList(KeyClass);
+            keyLabel.pickingMode = PickingMode.Ignore;
+
+            actionLabel = new Label { name = "PromptText" };
+            actionLabel.AddToClassList(TextClass);
+            actionLabel.pickingMode = PickingMode.Ignore;
+
+            box.Add(keyLabel);
+            box.Add(actionLabel);
+            promptContainer.Add(box);
+            root.Add(promptContainer);
+
+            Log("Prompt UI built");
+        }
+
+        #endregion
+
+        #region Keycap
+
+        private void HandleDeviceChanged(InputDeviceType device)
+        {
+            // Only matters if the prompt is showing; otherwise ShowPrompt refreshes it.
+            if (isVisible)
+            {
+                RefreshKeycap();
+            }
+        }
+
+        /// <summary>Sets the keycap text and shape (square = keyboard, round = gamepad).</summary>
+        private void RefreshKeycap()
+        {
+            if (keyLabel == null) return;
+
+            bool gamepad = inputReader != null && inputReader.CurrentDevice == InputDeviceType.Gamepad;
+
+            keyLabel.text = inputReader != null ? inputReader.InteractLabel : fallbackKeyLabel;
+
+            // EnableInClassList adds the class when true, removes it when false.
+            keyLabel.EnableInClassList(KeyGamepadClass, gamepad);
+            keyLabel.EnableInClassList(KeyKeyboardClass, !gamepad);
+
+            Log($"Keycap → {keyLabel.text} ({(gamepad ? "gamepad" : "keyboard")})");
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private void Log(string message)
+        {
+            if (showDebugLogs) Debug.Log($"[InteractionPromptUI] {message}");
+        }
+
+        #endregion
     }
 }
