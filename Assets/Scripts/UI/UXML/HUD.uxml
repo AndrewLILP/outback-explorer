@@ -54,5 +54,10 @@
         <ui:VisualElement name="MissionIndicator" class="mission-indicator">
             <ui:Label name="MissionText" class="mission-text" />
         </ui:VisualElement>
+
+        <!-- Speed warning: last child of HUD so it fills the full screen and draws on top -->
+        <ui:VisualElement name="SpeedWarning" class="speed-warning speed-warning--hidden" picking-mode="Ignore">
+            <ui:Label name="SpeedWarningText" text="Take your time" class="speed-warning-text" picking-mode="Ignore" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

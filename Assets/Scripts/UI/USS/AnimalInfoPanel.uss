@@ -1,14 +1,19 @@
 /* AnimalInfoPanel.uss
-   Compact bottom-center "field journal" card - same warm palette as HUD.uss.
-   Replaces the old large left-side panel. */
+   Compact top-left "field journal" card - same warm palette as HUD.uss.
+
+   .animal-panel is a full-screen wrapper; the card's position comes from
+   its flex alignment (column direction):
+   - justify-content = vertical   (flex-start = top)
+   - align-items     = horizontal (flex-start = left)
+   - padding         = gap from the screen edges */
 
 .animal-panel {
     position: absolute;
     width: 100%;
     height: 100%;
-    align-items: center;
-    justify-content: flex-end;
-    padding-bottom: 170px; /* sits above the speed-comparison pill, never overlaps it */
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 30px;
 }
 
 .animal-panel--hidden {
@@ -21,6 +26,8 @@
     display: flex;
 }
 
+/* Row: icon | text body | badge. align-items: center vertically centres
+   the icon and badge against the text. */
 .journal-card {
     flex-direction: row;
     align-items: center;
