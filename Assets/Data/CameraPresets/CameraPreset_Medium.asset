@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b6d9268540eed24d8d5cc7dc3ceaedc, type: 3}
+  m_Name: CameraPreset_Medium
+  m_EditorClassIdentifier: Assembly-CSharp::CameraPresetData
+  displayName: Far
+  distance: 10
+  height: 5
+  pitch: 9

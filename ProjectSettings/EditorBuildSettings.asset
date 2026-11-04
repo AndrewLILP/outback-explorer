@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/TestWorld2.unity
     guid: 42a8447b875a7c04899ee527cd73b229
   - enabled: 1
+    path: Assets/Scenes/PauseMenuScene.unity
+    guid: 776389c102a7f834ca34744353cbda79
+  - enabled: 1
     path: Assets/RealisticCarControllerV4/Demo Scenes/RCC_City_CarSelectionWithLoadScene.unity
     guid: a0b314d8fbd5b14448f3aefa6259ccfa
   - enabled: 1
@@ -26,9 +29,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/TestWorld3.unity
     guid: 6d48efd25befc5440b33c57d9ea5a608
-  - enabled: 1
-    path: Assets/Scenes/PauseMenuScene.unity
-    guid: 776389c102a7f834ca34744353cbda79
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
