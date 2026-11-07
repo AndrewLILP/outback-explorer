@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 735bdbaf9d903484f8df8d8f057bf3e7, type: 3}
+  m_Name: AnimalRoster
+  m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.Animals.AnimalRoster
+  animals:
+  - {fileID: 11400000, guid: 73b2da60c90abd84dbdfb4e46a63d033, type: 2}
+  - {fileID: 11400000, guid: 0d23fc0b3f6e3954498bf702b37c5ba2, type: 2}
+  - {fileID: 11400000, guid: a4a0ef51be28de1458085e58019da34a, type: 2}
+  - {fileID: 11400000, guid: 7951779e94ba30b46a3f65cf1d6470c6, type: 2}
+  - {fileID: 11400000, guid: dd1729dbde51b6541929161f655c1901, type: 2}
+  - {fileID: 11400000, guid: d93186d55b81d5740bb9b6ac6c4b5782, type: 2}
+  - {fileID: 11400000, guid: 79f54d55be8a14547a3b97c4cba6ee3e, type: 2}

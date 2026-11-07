@@ -111,6 +111,15 @@ namespace RelaxingDrive.Controls
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ToggleJournal"",
+                    ""type"": ""Button"",
+                    ""id"": ""9ca017d8-c58f-4bdb-a33c-49d5b89a4691"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -157,6 +166,28 @@ namespace RelaxingDrive.Controls
                     ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""346befde-356b-48a5-9f6d-90ef698e6735"",
+                    ""path"": ""<Keyboard>/tab"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""ToggleJournal"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3f8cd884-04e4-4bca-9274-afff5a76ab28"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";GamePad"",
+                    ""action"": ""ToggleJournal"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -195,6 +226,7 @@ namespace RelaxingDrive.Controls
             m_GamePlay = asset.FindActionMap("GamePlay", throwIfNotFound: true);
             m_GamePlay_Interact = m_GamePlay.FindAction("Interact", throwIfNotFound: true);
             m_GamePlay_Pause = m_GamePlay.FindAction("Pause", throwIfNotFound: true);
+            m_GamePlay_ToggleJournal = m_GamePlay.FindAction("ToggleJournal", throwIfNotFound: true);
         }
 
         ~@SundayDriveControls()
@@ -277,6 +309,7 @@ namespace RelaxingDrive.Controls
         private List<IGamePlayActions> m_GamePlayActionsCallbackInterfaces = new List<IGamePlayActions>();
         private readonly InputAction m_GamePlay_Interact;
         private readonly InputAction m_GamePlay_Pause;
+        private readonly InputAction m_GamePlay_ToggleJournal;
         /// <summary>
         /// Provides access to input actions defined in input action map "GamePlay".
         /// </summary>
@@ -296,6 +329,10 @@ namespace RelaxingDrive.Controls
             /// Provides access to the underlying input action "GamePlay/Pause".
             /// </summary>
             public InputAction @Pause => m_Wrapper.m_GamePlay_Pause;
+            /// <summary>
+            /// Provides access to the underlying input action "GamePlay/ToggleJournal".
+            /// </summary>
+            public InputAction @ToggleJournal => m_Wrapper.m_GamePlay_ToggleJournal;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -328,6 +365,9 @@ namespace RelaxingDrive.Controls
                 @Pause.started += instance.OnPause;
                 @Pause.performed += instance.OnPause;
                 @Pause.canceled += instance.OnPause;
+                @ToggleJournal.started += instance.OnToggleJournal;
+                @ToggleJournal.performed += instance.OnToggleJournal;
+                @ToggleJournal.canceled += instance.OnToggleJournal;
             }
 
             /// <summary>
@@ -345,6 +385,9 @@ namespace RelaxingDrive.Controls
                 @Pause.started -= instance.OnPause;
                 @Pause.performed -= instance.OnPause;
                 @Pause.canceled -= instance.OnPause;
+                @ToggleJournal.started -= instance.OnToggleJournal;
+                @ToggleJournal.performed -= instance.OnToggleJournal;
+                @ToggleJournal.canceled -= instance.OnToggleJournal;
             }
 
             /// <summary>
@@ -425,6 +468,13 @@ namespace RelaxingDrive.Controls
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnPause(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "ToggleJournal" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnToggleJournal(InputAction.CallbackContext context);
         }
     }
 }

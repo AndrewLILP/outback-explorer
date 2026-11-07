@@ -4,9 +4,13 @@
 // Shows the centred "Take your time" message while SpeedLimitMonitor says
 // the player is over the limit, and hides it when the warning clears.
 //
+// UPDATED (Nov 2026): second line shows the area's limit, e.g. "65 km/h",
+// read from SpeedLimitMonitor.SpeedLimitKmh each time the warning appears.
+// Changes are marked "NEW (limit)".
+//
 // Lives on the HUD GameObject next to HUDController and reads the same
 // UIDocument (HUD.uxml), but is its own class so HUDController keeps
-// doing only its two jobs (speed comparison + discovery strip).
+// doing only its own jobs.
 //
 // The fade itself is done in USS (opacity transition) - this script only
 // adds/removes a class, so look/feel can be tweaked without touching code.
@@ -32,6 +36,7 @@ namespace RelaxingDrive.UI
         [SerializeField] private bool showDebugLogs = true;
 
         private VisualElement warningPanel;
+        private Label limitLabel; // NEW (limit)
 
         private void Awake()
         {
@@ -90,12 +95,18 @@ namespace RelaxingDrive.UI
                 yield break;
             }
 
+            limitLabel = warningPanel.Q<Label>("SpeedWarningLimit"); // NEW (limit)
+
             Hide();
             if (showDebugLogs) Debug.Log($"[SpeedWarningUI] Ready after {framesWaited} frame(s)");
         }
 
         private void Show()
         {
+            // NEW (limit): refresh the limit every time, since gates can change it.
+            if (limitLabel != null && monitor != null)
+                limitLabel.text = $"{monitor.SpeedLimitKmh:0} km/h";
+
             warningPanel?.RemoveFromClassList(HiddenClass);
         }
 

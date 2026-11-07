@@ -8,6 +8,10 @@
 // Single responsibility: this class only DETECTS. It doesn't show UI and
 // doesn't move the car - SpeedWarningUI and SpeedLimitRespawner subscribe
 // to its events and do those jobs (Observer pattern).
+//
+// UPDATED (Nov 2026): SpeedLimitKmh is now a public property (get + set) so
+// the warning can show the limit, and SpeedLimitGate can change it per area.
+// Changes are marked "NEW (limit)".
 
 using System;
 using UnityEngine;
@@ -23,8 +27,7 @@ namespace RelaxingDrive.Player
         [Tooltip("How long (seconds) the player can stay over the limit before respawning.")]
         [SerializeField] private float gracePeriodSeconds = 10f;
 
-        [Tooltip("Untick to allow any speed. Later, a trigger at the bridge can toggle this " +
-                 "via the LimitEnabled property for the highways out of town.")]
+        [Tooltip("Untick to allow any speed. SpeedLimitGate toggles this via LimitEnabled.")]
         [SerializeField] private bool limitEnabled = true;
 
         [Header("Debug")]
@@ -52,6 +55,20 @@ namespace RelaxingDrive.Player
             {
                 limitEnabled = value;
                 if (!limitEnabled) ResetTimer();
+            }
+        }
+
+        /// <summary>
+        /// NEW (limit): the current limit in km/h. SpeedWarningUI reads it for the
+        /// second line of the warning; SpeedLimitGate can set it per area.
+        /// </summary>
+        public float SpeedLimitKmh
+        {
+            get => speedLimitKmh;
+            set
+            {
+                speedLimitKmh = Mathf.Max(1f, value);
+                Log($"Speed limit set to {speedLimitKmh:0} km/h");
             }
         }
 

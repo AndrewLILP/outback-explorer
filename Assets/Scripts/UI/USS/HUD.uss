@@ -8,6 +8,11 @@
    - Secondary text: rgba(196, 180, 150, 0.85) muted tan
    - Rust accent:    rgb(196, 110, 58)       (kangaroo / discovered highlight)
    - Olive accent:   rgb(122, 138, 84)       (frillneck / secondary highlight)
+
+   Tier colours (pips):
+   - First  = cream  rgb(238, 230, 214)
+   - Local  = olive  rgb(122, 138, 84)
+   - Remote = rust   rgb(196, 110, 58)
 */
 
 .hud-container {
@@ -16,25 +21,27 @@
 }
 
 /* ===================================
-   SPEED COMPARISON (bottom-center, floats just above RCC's own dash)
+   CHANGED (speed): SPEED READOUT - rectangle, bottom-right corner
+   "Speed: 42 km/h (faster than a koala)"
    =================================== */
 .speed-panel {
     position: absolute;
-    bottom: 110px;
-    left: 50%;
-    translate: -50% 0;
-    align-items: center;
+    bottom: 30px;          /* lines up with the discovery pill on the left */
+    right: 30px;
+    align-items: flex-end;
 }
 
 .speed-comparison-text {
-    background-color: rgba(44, 38, 28, 0.78);
-    border-radius: 999px;
+    background-color: rgba(44, 38, 28, 0.85);  /* panel surface */
+    border-radius: 6px;                        /* rectangle, softened corners */
     border-width: 1px;
-    border-color: rgba(196, 164, 105, 0.5);
-    padding: 6px 18px;
+    border-color: rgba(196, 164, 105, 0.55);   /* brass */
+    padding: 8px 14px;
     font-size: 14px;
-    color: rgb(238, 230, 214);
-    -unity-text-align: middle-center;
+    color: rgb(238, 230, 214);                 /* cream */
+    -unity-text-align: middle-right;
+    /* Fixed min width so the box doesn't jump in size as the animal name changes */
+    min-width: 300px;
 }
 
 /* ===================================
@@ -94,16 +101,32 @@
     -unity-text-align: middle-left;
 }
 
+/* CHANGED (pips): the grid is now a column - title, stamp row, legend */
 .discovery-grid {
-    flex-direction: row;
-    flex-wrap: wrap;
-    max-width: 360px;
+    flex-direction: column;
+    max-width: 380px;
     background-color: rgba(44, 38, 28, 0.9);
     border-radius: 12px;
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.55);
     padding: 12px;
     margin-bottom: 8px;
+}
+
+/* NEW (pips): "Local Sightings Award · 3 of 7" */
+.grid-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(196, 164, 105);  /* brass */
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+/* NEW (pips): holds the 7 stamps (was the grid itself) */
+.stamp-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .stamp {
@@ -139,7 +162,7 @@
 }
 
 /* Discovered - filled ink-stamp circle, slight rotation per species for a
-   hand-stamped feel */
+   hand-stamped feel. "Discovered" now means: sighted in the tier shown. */
 .stamp.discovered .stamp-code {
     border-width: 2px;
     color: rgb(44, 38, 28);
@@ -188,6 +211,65 @@
 }
 
 /* ===================================
+   NEW (pips): three small dots under each stamp - First / Local / Remote
+   Empty = faint ring. Filled = tier colour. Current tier = slightly larger.
+   =================================== */
+.stamp-pips {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 3px;
+    height: 10px;
+}
+
+.pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    margin: 0 2px;
+    border-width: 1px;
+    border-color: rgba(196, 180, 150, 0.45);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pip.pip--current {
+    width: 9px;
+    height: 9px;
+    border-radius: 4.5px;
+    border-color: rgba(238, 230, 214, 0.8);
+}
+
+.pip.pip--first.pip--filled {
+    background-color: rgb(238, 230, 214);
+    border-color: rgb(238, 230, 214);
+}
+
+.pip.pip--local.pip--filled {
+    background-color: rgb(122, 138, 84);
+    border-color: rgb(122, 138, 84);
+}
+
+.pip.pip--remote.pip--filled {
+    background-color: rgb(196, 110, 58);
+    border-color: rgb(196, 110, 58);
+}
+
+/* Legend row at the bottom of the grid */
+.pip-legend {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.pip-legend-label {
+    font-size: 11px;
+    color: rgba(196, 180, 150, 0.9);
+    margin-left: 2px;
+    margin-right: 10px;
+}
+
+/* ===================================
    MISSION INDICATOR (top-left, unused in this slice)
    =================================== */
 .mission-indicator {
@@ -205,6 +287,7 @@
     font-size: 16px;
     color: rgb(238, 230, 214);
 }
+
 /* ===================================
    SPEED WARNING (full-screen, centred "Take your time")
    Same leather pill as .speed-comparison-text, scaled up.
@@ -224,13 +307,74 @@
     opacity: 0;
 }
 
-.speed-warning-text {
+/* CHANGED (limit): rectangle card holding two lines */
+.speed-warning-card {
     background-color: rgba(44, 38, 28, 0.88);  /* panel surface */
-    border-radius: 999px;                      /* pill */
+    border-radius: 8px;                        /* rectangle, softened corners */
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.55);   /* brass border */
     padding: 14px 40px;
+    align-items: center;
+}
+
+.speed-warning-text {
     font-size: 32px;
     color: rgb(238, 230, 214);                 /* cream */
     -unity-text-align: middle-center;
+}
+
+/* NEW (limit): "65 km/h" under the message */
+.speed-warning-limit {
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(196, 164, 105);                 /* brass */
+    -unity-text-align: middle-center;
+    margin-top: 4px;
+}
+
+/* ===================================
+   AWARD POP-UP (centred card, AwardPopupUI)
+   Same leather/brass palette as the speed warning, with a rust
+   border so it reads as a reward rather than a nudge.
+   =================================== */
+.award-popup {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    scale: 1 1;
+    transition-property: opacity, scale;
+    transition-duration: 0.6s, 0.6s;
+}
+
+.award-popup.award-popup--hidden {
+    opacity: 0;
+    scale: 0.95 0.95;  /* subtle grow-in as it fades in */
+}
+
+.award-card {
+    background-color: rgba(44, 38, 28, 0.92);  /* panel surface */
+    border-radius: 18px;
+    border-width: 2px;
+    border-color: rgb(196, 110, 58);            /* rust accent */
+    padding: 18px 44px;
+    align-items: center;
+    max-width: 900px;                           /* fits 1280x800 */
+}
+
+.award-title {
+    font-size: 16px;
+    color: rgb(196, 164, 105);                  /* brass */
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    -unity-text-align: middle-center;
+}
+
+.award-message {
+    font-size: 30px;
+    color: rgb(238, 230, 214);                  /* cream */
+    -unity-text-align: middle-center;
+    white-space: normal;
 }

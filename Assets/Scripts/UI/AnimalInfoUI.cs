@@ -1,10 +1,18 @@
 // AnimalInfoUI.cs
-// UI Controller for the compact "field journal" card that shows animal facts
-// when the player is near a discoverable animal. Redesigned for the RCC
-// scene: a smaller bottom-center card instead of the old large left panel.
+// Location: Assets/Scripts/UI/AnimalInfoUI.cs
 //
-// Public contract (SetCurrentAnimal / OnAnimalRangeExit) is unchanged, so
-// AnimalController needs no changes to keep working with this rewrite.
+// UI controller for the compact top-left "field journal" card that shows
+// animal facts when the player is near a discoverable animal.
+//
+// UPDATED (Nov 2026): Sighting tiers.
+//  - SetCurrentAnimal now takes the SightingResult from SightingManager instead
+//    of asking AnimalDiscoveryManager itself. The old version checked
+//    HasDiscovered() AFTER the animal had already been recorded, so it always
+//    said "Already discovered" - passing the result in fixes that.
+//  - Badge text: "New discovery" (first ever), then "First sighting ✓",
+//    "Local Sighting ✓" or "Remote Sighting ✓".
+//  - The badge keeps the "new" styling for a NEW Local/Remote sighting, and
+//    switches to the muted "--already" styling for any repeat.
 
 using System.Collections;
 using UnityEngine;
@@ -16,6 +24,8 @@ namespace RelaxingDrive.UI
     [RequireComponent(typeof(UIDocument))]
     public class AnimalInfoUI : MonoBehaviour
     {
+        private const string BadgeAlreadyClass = "discovery-badge--already";
+
         [Header("UI References")]
         [Tooltip("Optional - only needed if the USS isn't already linked via the UXML's <Style> tag")]
         [SerializeField] private StyleSheet animalInfoStyleSheet;
@@ -50,15 +60,8 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Waits until the UIDocument's visual tree actually exists before
-        /// querying it, then hides the panel unconditionally. The previous
-        /// version's HidePanel() had `if (!isPanelVisible) return;` as its
-        /// first line - since isPanelVisible defaults to false, the very
-        /// first call (from initialization) returned immediately and never
-        /// applied the hidden CSS class, leaving the panel visible with raw
-        /// placeholder UXML text from scene start. Fixed below by removing
-        /// that guard entirely; re-applying "hidden" when already hidden is
-        /// a harmless no-op in UI Toolkit.
+        /// Waits until the UIDocument's visual tree exists before querying it,
+        /// then hides the panel unconditionally.
         /// </summary>
         private IEnumerator InitializeWhenReady()
         {
@@ -102,24 +105,21 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Called by AnimalController when player enters animal's range.
+        /// Called by AnimalController when the player enters an animal's range.
         /// </summary>
-        public void SetCurrentAnimal(AnimalData animalData, Vector3 animalPosition)
+        public void SetCurrentAnimal(AnimalData animalData, SightingResult result)
         {
             if (!initialized || animalData == null) return;
 
             currentAnimal = animalData;
-            bool isFirstTime = AnimalDiscoveryManager.Instance != null &&
-                !AnimalDiscoveryManager.Instance.HasDiscovered(animalData);
-
-            UpdateAnimalInfo(animalData, isFirstTime);
+            UpdateAnimalInfo(animalData, result);
             ShowPanel();
 
-            Log($"Showing {animalData.AnimalName} (first time: {isFirstTime})");
+            Log($"Showing {animalData.AnimalName} ({result})");
         }
 
         /// <summary>
-        /// Called by AnimalController when player exits animal's range.
+        /// Called by AnimalController when the player exits an animal's range.
         /// </summary>
         public void OnAnimalRangeExit(AnimalData animalData)
         {
@@ -129,11 +129,10 @@ namespace RelaxingDrive.UI
             {
                 HidePanel();
                 currentAnimal = null;
-                Log($"Hiding panel ({animalData.AnimalName} left range)");
             }
         }
 
-        private void UpdateAnimalInfo(AnimalData animalData, bool isFirstTime)
+        private void UpdateAnimalInfo(AnimalData animalData, SightingResult result)
         {
             if (animalNameLabel != null) animalNameLabel.text = animalData.AnimalName;
             if (scientificNameLabel != null) scientificNameLabel.text = animalData.ScientificName;
@@ -150,16 +149,24 @@ namespace RelaxingDrive.UI
 
             if (discoveryBadge != null && discoveryText != null)
             {
-                if (isFirstTime)
-{
-    discoveryText.text = "New discovery";
-    discoveryBadge.RemoveFromClassList("discovery-badge--already");
-}
-else
-{
-    discoveryText.text = "Already discovered";
-    discoveryBadge.AddToClassList("discovery-badge--already");
-}
+                discoveryText.text = BadgeTextFor(result);
+
+                // EnableInClassList adds the class when true, removes it when false.
+                discoveryBadge.EnableInClassList(BadgeAlreadyClass, !result.IsNew);
+            }
+        }
+
+        /// <summary>Maps a sighting result to the badge wording.</summary>
+        private static string BadgeTextFor(SightingResult result)
+        {
+            if (result.Tier == SightingTier.First && result.IsNew)
+                return "New discovery";
+
+            switch (result.Tier)
+            {
+                case SightingTier.Local: return "Local Sighting ✓";
+                case SightingTier.Remote: return "Remote Sighting ✓";
+                default: return "First sighting ✓";
             }
         }
 
@@ -178,7 +185,6 @@ else
             isPanelVisible = false;
         }
 
-        /// <summary>Manual toggle, for testing from the Inspector.</summary>
         [ContextMenu("Test Panel Visibility")]
         public void TestPanelVisibility()
         {

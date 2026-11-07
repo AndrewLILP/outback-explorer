@@ -2,11 +2,12 @@
     <Style src="project://database/Assets/Scripts/UI/USS/HUD.uss?fileID=7433441132597879392&amp;guid=62f7dd346571de947be06addefd2eca8&amp;type=3#HUD" />
     <ui:VisualElement name="HUD" class="hud-container">
         <ui:VisualElement name="SpeedPanel" class="speed-panel" picking-mode="Ignore">
-            <ui:Label name="SpeedComparison" text="Take your time..." class="speed-comparison-text" />
+            <!-- CHANGED (speed): bottom-right rectangle, e.g. "Speed: 42 km/h (faster than a koala)" -->
+            <ui:Label name="SpeedComparison" text="Speed: 0 km/h" class="speed-comparison-text" />
         </ui:VisualElement>
 
         <ui:VisualElement name="DiscoveryWidget" class="discovery-widget">
-            <ui:Button name="DiscoveryPill" class="discovery-pill">
+            <ui:Button name="DiscoveryPill" class="discovery-pill" focusable="false">
                 <ui:VisualElement name="DiscoveryDots" class="discovery-dots">
                     <ui:VisualElement name="Dot0" class="discovery-dot discovery-dot--empty" />
                     <ui:VisualElement name="Dot1" class="discovery-dot discovery-dot--empty" />
@@ -16,37 +17,84 @@
                     <ui:VisualElement name="Dot5" class="discovery-dot discovery-dot--empty" />
                     <ui:VisualElement name="Dot6" class="discovery-dot discovery-dot--empty" />
                 </ui:VisualElement>
-                <ui:Label name="DiscoveryCountLabel" text="0/7 found" class="discovery-count-label" />
+                <ui:Label name="DiscoveryCountLabel" text="0 of 7 animals found (First Sighting Award)" class="discovery-count-label" />
             </ui:Button>
 
-            <ui:VisualElement name="DiscoveryGrid" class="discovery-grid" style="display: none;">
-                <ui:VisualElement name="StampKangaroo" class="stamp undiscovered kangaroo">
-                    <ui:Label text="KA" class="stamp-code" />
-                    <ui:Label text="Kangaroo" class="stamp-name" />
+            <!-- CHANGED (pips): grid is now a column - title, stamp row, legend -->
+            <ui:VisualElement name="DiscoveryGrid" class="discovery-grid" style="display: none;" picking-mode="Ignore">
+                <ui:Label name="GridTitle" text="First Sighting Award  ·  0 of 7" class="grid-title" />
+                <ui:VisualElement name="StampRow" class="stamp-row">
+                    <ui:VisualElement name="StampKangaroo" class="stamp undiscovered kangaroo">
+                        <ui:Label text="KA" class="stamp-code" />
+                        <ui:Label text="Kangaroo" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampFrillneck" class="stamp undiscovered frillneck">
+                        <ui:Label text="FR" class="stamp-code" />
+                        <ui:Label text="Frillneck lizard" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampEmu" class="stamp undiscovered emu">
+                        <ui:Label text="EM" class="stamp-code" />
+                        <ui:Label text="Emu" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampEchidna" class="stamp undiscovered echidna">
+                        <ui:Label text="EC" class="stamp-code" />
+                        <ui:Label text="Echidna" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampDevil" class="stamp undiscovered devil">
+                        <ui:Label text="TD" class="stamp-code" />
+                        <ui:Label text="Tasmanian devil" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampKoala" class="stamp undiscovered koala">
+                        <ui:Label text="KO" class="stamp-code" />
+                        <ui:Label text="Koala" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="StampPlatypus" class="stamp undiscovered platypus">
+                        <ui:Label text="PL" class="stamp-code" />
+                        <ui:Label text="Platypus" class="stamp-name" />
+                        <ui:VisualElement class="stamp-pips">
+                            <ui:VisualElement name="PipFirst" class="pip pip--first" />
+                            <ui:VisualElement name="PipLocal" class="pip pip--local" />
+                            <ui:VisualElement name="PipRemote" class="pip pip--remote" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="StampFrillneck" class="stamp undiscovered frillneck">
-                    <ui:Label text="FR" class="stamp-code" />
-                    <ui:Label text="Frillneck lizard" class="stamp-name" />
-                </ui:VisualElement>
-                <ui:VisualElement name="StampEmu" class="stamp undiscovered emu">
-                    <ui:Label text="EM" class="stamp-code" />
-                    <ui:Label text="Emu" class="stamp-name" />
-                </ui:VisualElement>
-                <ui:VisualElement name="StampEchidna" class="stamp undiscovered echidna">
-                    <ui:Label text="EC" class="stamp-code" />
-                    <ui:Label text="Echidna" class="stamp-name" />
-                </ui:VisualElement>
-                <ui:VisualElement name="StampDevil" class="stamp undiscovered devil">
-                    <ui:Label text="TD" class="stamp-code" />
-                    <ui:Label text="Tasmanian devil" class="stamp-name" />
-                </ui:VisualElement>
-                <ui:VisualElement name="StampKoala" class="stamp undiscovered koala">
-                    <ui:Label text="KO" class="stamp-code" />
-                    <ui:Label text="Koala" class="stamp-name" />
-                </ui:VisualElement>
-                <ui:VisualElement name="StampPlatypus" class="stamp undiscovered platypus">
-                    <ui:Label text="PL" class="stamp-code" />
-                    <ui:Label text="Platypus" class="stamp-name" />
+                <ui:VisualElement name="PipLegend" class="pip-legend">
+                    <ui:VisualElement class="pip pip--first pip--filled" />
+                    <ui:Label text="First" class="pip-legend-label" />
+                    <ui:VisualElement class="pip pip--local pip--filled" />
+                    <ui:Label text="Local" class="pip-legend-label" />
+                    <ui:VisualElement class="pip pip--remote pip--filled" />
+                    <ui:Label text="Remote" class="pip-legend-label" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
@@ -55,9 +103,21 @@
             <ui:Label name="MissionText" class="mission-text" />
         </ui:VisualElement>
 
+        <!-- Centred award card (AwardPopupUI). Full-screen, ignores clicks. -->
+        <ui:VisualElement name="AwardPopup" class="award-popup award-popup--hidden" picking-mode="Ignore">
+            <ui:VisualElement name="AwardCard" class="award-card" picking-mode="Ignore">
+                <ui:Label name="AwardTitle" text="First Sighting Award" class="award-title" picking-mode="Ignore" />
+                <ui:Label name="AwardMessage" text="All 7 animals sighted!" class="award-message" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <!-- Speed warning: last child of HUD so it fills the full screen and draws on top -->
+        <!-- CHANGED (limit): rectangle card with two lines - message + the area's limit -->
         <ui:VisualElement name="SpeedWarning" class="speed-warning speed-warning--hidden" picking-mode="Ignore">
-            <ui:Label name="SpeedWarningText" text="Take your time" class="speed-warning-text" picking-mode="Ignore" />
+            <ui:VisualElement name="SpeedWarningCard" class="speed-warning-card" picking-mode="Ignore">
+                <ui:Label name="SpeedWarningText" text="Take your time" class="speed-warning-text" picking-mode="Ignore" />
+                <ui:Label name="SpeedWarningLimit" text="65 km/h" class="speed-warning-limit" picking-mode="Ignore" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

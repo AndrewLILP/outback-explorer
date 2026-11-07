@@ -11,8 +11,13 @@
 // limit in the wrong state. With two gates, each one SETS a known state, so
 // whichever gate you passed through last is always right, in either direction.
 //
-// Single responsibility: this only detects the player and sets
-// SpeedLimitMonitor.LimitEnabled. It doesn't know about UI or respawning.
+// UPDATED (Nov 2026): optional "Set Limit Kmh". 0 = leave the limit unchanged
+// (current behaviour). A number (e.g. 50 in town, 120 on the highway) also
+// sets that area's limit, which the "Take your time" warning displays.
+// Changes are marked "NEW (limit)".
+//
+// Single responsibility: this only detects the player and sets values on
+// SpeedLimitMonitor. It doesn't know about UI or respawning.
 
 using UnityEngine;
 using RelaxingDrive.Player;
@@ -26,6 +31,10 @@ namespace RelaxingDrive.World
         [Tooltip("Ticked = speed limit ON after passing (town end).\n" +
                  "Unticked = speed limit OFF after passing (highway end).")]
         [SerializeField] private bool enableLimit = true;
+
+        // NEW (limit)
+        [Tooltip("Speed limit (km/h) for the area after this gate. 0 = keep the current limit.")]
+        [SerializeField] private float setLimitKmh = 0f;
 
         [Header("References")]
         [Tooltip("Leave empty to find it automatically in the scene.")]
@@ -54,14 +63,18 @@ namespace RelaxingDrive.World
         {
             if (monitor == null || !IsActivePlayer(other)) return;
 
+            bool limitChanges = setLimitKmh > 0f && !Mathf.Approximately(monitor.SpeedLimitKmh, setLimitKmh);
+
             // Already in the right state (e.g. a second child collider of
             // the car entering) - nothing to do.
-            if (monitor.LimitEnabled == enableLimit) return;
+            if (monitor.LimitEnabled == enableLimit && !limitChanges) return;
 
             monitor.LimitEnabled = enableLimit;
+            if (limitChanges) monitor.SpeedLimitKmh = setLimitKmh; // NEW (limit)
 
             if (showDebugLogs)
-                Debug.Log($"[SpeedLimitGate] '{name}': speed limit {(enableLimit ? "ON" : "OFF")}");
+                Debug.Log($"[SpeedLimitGate] '{name}': speed limit {(enableLimit ? "ON" : "OFF")}" +
+                          (limitChanges ? $", {setLimitKmh:0} km/h" : ""));
         }
 
         /// <summary>
@@ -80,7 +93,6 @@ namespace RelaxingDrive.World
         }
 
         // Draws the gate in the Scene view: green = limit ON, red = limit OFF.
-        // Makes it easy to check which gate is which at a glance.
         private void OnDrawGizmos()
         {
             BoxCollider box = GetComponent<BoxCollider>();

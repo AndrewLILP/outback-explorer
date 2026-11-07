@@ -1,4 +1,11 @@
 // GameSaveData.cs
+// Location: Assets/Scripts/Core/GameSaveData.cs
+//
+// UPDATED (Nov 2026): save version 2 adds localSightings / remoteSightings
+// for the sighting tiers. Version 1 saves still load: JsonUtility leaves
+// missing fields at their default (empty list), so old saves just have no
+// Local/Remote sightings yet.
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,10 +41,22 @@ namespace RelaxingDrive.Core
         #region Animal Discovery Data
 
         /// <summary>
-        /// List of animal names that have been discovered.
+        /// List of animal names that have been discovered (= the First tier).
         /// Example: ["Kangaroo", "Emu", "Echidna"]
         /// </summary>
         public List<string> discoveredAnimals = new List<string>();
+
+        // ===== NEW (v2) — sighting tiers ===========================================
+        /// <summary>
+        /// Species seen in the start area (Local) after the First tier was complete.
+        /// </summary>
+        public List<string> localSightings = new List<string>();
+
+        /// <summary>
+        /// Species seen in the wider world (Remote) after the First tier was complete.
+        /// </summary>
+        public List<string> remoteSightings = new List<string>();
+        // ===== END NEW ===============================================================
 
         #endregion
 
@@ -61,9 +80,9 @@ namespace RelaxingDrive.Core
 
         /// <summary>
         /// Save file version for future compatibility.
-        /// If we change data structure later, we can handle migration.
+        /// v1 = original. v2 = added localSightings / remoteSightings.
         /// </summary>
-        public int saveVersion = 1;
+        public int saveVersion = 2; // CHANGED (was 1)
 
         #endregion
 
@@ -188,6 +207,8 @@ namespace RelaxingDrive.Core
                    $"- Saved: {saveTimestamp}\n" +
                    $"- Zones Visited: {zoneIDs.Count}\n" +
                    $"- Animals Discovered: {discoveredAnimals.Count}\n" +
+                   $"- Local Sightings: {localSightings.Count}\n" +   // NEW
+                   $"- Remote Sightings: {remoteSightings.Count}\n" + // NEW
                    $"- Buildings Activated: {activatedBuildingIDs.Count}";
         }
 

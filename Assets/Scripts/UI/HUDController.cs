@@ -1,39 +1,59 @@
 // HUDController.cs
+// Location: Assets/Scripts/UI/HUDController.cs
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 using RelaxingDrive.Animals;
+using RelaxingDrive.Core;
 using RelaxingDrive.Player;
 
 namespace RelaxingDrive.UI
 {
     /// <summary>
     /// Slim HUD controller for the gameplay scene. Owns exactly two things:
-    /// - The "faster than a kangaroo" speed-comparison text (reads speed via
-    ///   IVehicleController through PlayerStateManager, so it's car-agnostic).
-    /// - The collapsible animal-discovery stamp strip.
+    /// - The bottom-right speed readout: "Speed: 42 km/h (faster than a koala)".
+    /// - The collapsible animal-discovery journal (bottom-left pill + stamp grid).
     ///
-    /// Pause/Resume/Save/New Game/Instructions moved out entirely - see
-    /// PauseFlowManager (gameplay scene) and PauseMenuSceneController
-    /// (PauseMenuScene), which avoid the uGUI EventSystem/UI Toolkit Sort
-    /// Order conflict by loading pause as a separate scene instead of an
-    /// overlapping UIDocument competing with RCC's Canvas.
+    /// Tier display (Nov 2026):
+    ///  - Before the First Sighting Award: "n of 7 animals found (First Sighting Award)"
+    ///  - After it: "n of 7 local animals found", switching to remote when the
+    ///    latest sighting was Remote.
+    ///  - The dots, the grid title and the filled stamps all show that SAME tier,
+    ///    so the grid always matches the award the player is working on.
+    ///  - Each stamp has 3 pips (First / Local / Remote); the current tier's pip
+    ///    is drawn slightly larger.
+    ///
+    /// Toggling the grid (Nov 2026):
+    ///  - The pill no longer takes focus. Before, once focused, Space/Enter (PC)
+    ///    or A (Deck) "clicked" it - the handbrake and enter-car buttons - so the
+    ///    grid opened at seemingly random times.
+    ///  - It now toggles via the ToggleJournal input action (Tab / View button)
+    ///    from PlayerInputReader, or a mouse click on the pill.
+    ///  - It still auto-opens briefly on a NEW sighting (optional, see Inspector).
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class HUDController : MonoBehaviour
     {
-        // Order controls left-to-right position in the stamp grid. The two
-        // vertical-slice species lead so they're the first thing players see.
+        // Order controls left-to-right position in the dots and stamp grid.
+        // Names must match AnimalData.AnimalName.
         private static readonly string[] AnimalOrder =
         {
             "Kangaroo", "Frillneck Lizard", "Emu", "Echidna", "Tasmanian Devil", "Koala", "Platypus"
         };
 
+        // Pip element names inside each stamp, in SightingTier order (First, Local, Remote).
+        private static readonly string[] PipNames = { "PipFirst", "PipLocal", "PipRemote" };
+
+        private const string PipFilledClass = "pip--filled";
+        private const string PipCurrentClass = "pip--current";
+
         [Header("References")]
         [SerializeField] private UIDocument uiDocument;
 
         [Header("Settings")]
-        [Tooltip("How long the stamp grid stays auto-expanded after a new discovery.")]
+        [Tooltip("Open the grid briefly when the player makes a NEW sighting.")]
+        [SerializeField] private bool autoExpandOnNewSighting = true;
+        [Tooltip("How long the grid stays auto-expanded after a new sighting.")]
         [SerializeField] private float discoveryPopupSeconds = 3f;
         [SerializeField] private bool showDebugLogs = true;
 
@@ -43,11 +63,26 @@ namespace RelaxingDrive.UI
         private Button discoveryPill;
         private Label discoveryCountLabel;
         private VisualElement discoveryGrid;
+        private Label gridTitleLabel;
         private VisualElement[] discoveryDots;
+        private VisualElement[] stamps;
+        private VisualElement[,] pips; // [animal, tier]
+
+        // Last whole-number speed written to the label (-1 = nothing shown yet).
+        private int lastShownSpeed = -1;
 
         private bool isDiscoveryExpanded;
         private Coroutine collapseRoutine;
         private bool initialized;
+
+        // Cached so OnDisable never re-creates managers during scene teardown.
+        private SightingManager sightings;
+        private GameSaveManager saveManager;
+        private PlayerInputReader inputReader;
+
+        // Which region the HUD shows once the First tier is complete.
+        // Defaults to Local; follows the region of the latest Local/Remote sighting.
+        private SightingRegion displayedRegion = SightingRegion.Local;
 
         // Animal speed constants (km/h), used for the comparison text.
         private const float KANGAROO_SPEED = 60f;
@@ -71,14 +106,14 @@ namespace RelaxingDrive.UI
 
         private void OnDisable()
         {
-            if (AnimalDiscoveryManager.Instance != null)
-                AnimalDiscoveryManager.Instance.OnAnimalDiscovered -= HandleAnimalDiscovered;
+            if (sightings != null) sightings.OnSighting -= HandleSighting;
+            if (saveManager != null) saveManager.OnInitialLoadComplete -= UpdateDiscoveryDisplay;
+            if (inputReader != null) inputReader.OnJournalTogglePressed -= ToggleDiscoveryGrid;
         }
 
         /// <summary>
-        /// Waits until the UIDocument's panel has actually built a visual tree
-        /// before querying it - guards against root.Q(...) throwing on a null
-        /// rootVisualElement and silently aborting setup.
+        /// Waits until the UIDocument's panel has built a visual tree before
+        /// querying it - guards against root.Q(...) on a null rootVisualElement.
         /// </summary>
         private IEnumerator InitializeWhenReady()
         {
@@ -99,8 +134,26 @@ namespace RelaxingDrive.UI
             root = uiDocument.rootVisualElement;
             SetupUIElements();
 
-            if (AnimalDiscoveryManager.Instance != null)
-                AnimalDiscoveryManager.Instance.OnAnimalDiscovered += HandleAnimalDiscovered;
+            // Touching the Instance bootstraps AnimalDiscoveryManager (other systems,
+            // e.g. the Steam achievement, rely on the HUD doing this).
+            _ = AnimalDiscoveryManager.Instance;
+
+            sightings = SightingManager.Instance;
+            if (sightings != null) sightings.OnSighting += HandleSighting;
+
+            // If the save hasn't loaded yet, refresh once it has.
+            saveManager = GameSaveManager.Instance;
+            if (saveManager != null && !saveManager.HasCompletedInitialLoad)
+                saveManager.OnInitialLoadComplete += UpdateDiscoveryDisplay;
+
+            // Tab / View button toggles the grid.
+            inputReader = PlayerInputReader.Instance != null
+                ? PlayerInputReader.Instance
+                : FindFirstObjectByType<PlayerInputReader>();
+            if (inputReader != null)
+                inputReader.OnJournalTogglePressed += ToggleDiscoveryGrid;
+            else
+                Debug.LogWarning("[HUDController] No PlayerInputReader in scene - grid can only be opened by mouse.");
 
             UpdateDiscoveryDisplay();
             initialized = true;
@@ -114,12 +167,28 @@ namespace RelaxingDrive.UI
             discoveryPill = root.Q<Button>("DiscoveryPill");
             discoveryCountLabel = root.Q<Label>("DiscoveryCountLabel");
             discoveryGrid = root.Q<VisualElement>("DiscoveryGrid");
+            gridTitleLabel = root.Q<Label>("GridTitle");
 
             discoveryDots = new VisualElement[AnimalOrder.Length];
-            for (int i = 0; i < AnimalOrder.Length; i++)
-                discoveryDots[i] = root.Q<VisualElement>($"Dot{i}");
+            stamps = new VisualElement[AnimalOrder.Length];
+            pips = new VisualElement[AnimalOrder.Length, PipNames.Length];
 
-            if (discoveryPill != null) discoveryPill.clicked += ToggleDiscoveryGrid;
+            for (int i = 0; i < AnimalOrder.Length; i++)
+            {
+                discoveryDots[i] = root.Q<VisualElement>($"Dot{i}");
+                stamps[i] = root.Q<VisualElement>($"Stamp{ElementSuffixFor(AnimalOrder[i])}");
+
+                // Pips share names across stamps, so query INSIDE each stamp.
+                for (int t = 0; t < PipNames.Length; t++)
+                    pips[i, t] = stamps[i]?.Q<VisualElement>(PipNames[t]);
+            }
+
+            if (discoveryPill != null)
+            {
+                // Never take focus - otherwise Space/Enter/A "click" it during play.
+                discoveryPill.focusable = false;
+                discoveryPill.clicked += ToggleDiscoveryGrid; // mouse click still works on PC
+            }
 
             SetDiscoveryGridExpanded(false);
 
@@ -133,8 +202,10 @@ namespace RelaxingDrive.UI
         }
 
         /// <summary>
-        /// Updates the "faster than a kangaroo" text. Only shown while
-        /// actually driving - on foot there's no speed worth comparing.
+        /// UPDATED (Nov 2026): bottom-right readout, "Speed: 42 km/h (faster than a koala)".
+        /// Only shown while driving. The text is rebuilt only when the whole-number
+        /// speed changes - building a new string every frame creates garbage, which
+        /// causes small hitches on the Steam Deck.
         /// </summary>
         private void UpdateSpeedComparison()
         {
@@ -144,45 +215,54 @@ namespace RelaxingDrive.UI
             if (psm == null || !psm.IsDriving || psm.VehicleController == null)
             {
                 speedComparisonLabel.style.display = DisplayStyle.None;
+                lastShownSpeed = -1; // force a refresh when driving resumes
                 return;
             }
 
             speedComparisonLabel.style.display = DisplayStyle.Flex;
-            float speed = psm.VehicleController.Speed;
 
-            if (speed >= KANGAROO_SPEED) speedComparisonLabel.text = "Faster than a kangaroo";
-            else if (speed >= EMU_SPEED) speedComparisonLabel.text = "Faster than an emu";
-            else if (speed >= FRILLNECK_LIZARD_SPEED) speedComparisonLabel.text = "Faster than a frillneck lizard";
-            else if (speed >= TASMANIAN_DEVIL_SPEED) speedComparisonLabel.text = "Faster than a Tasmanian devil";
-            else if (speed >= PLATYPUS_SPEED) speedComparisonLabel.text = "Faster than a platypus";
-            else if (speed >= KOALA_SPEED) speedComparisonLabel.text = "Faster than a koala";
-            else if (speed >= ECHIDNA_SPEED) speedComparisonLabel.text = "Faster than an echidna";
-            else speedComparisonLabel.text = "Take your time...";
+            // Abs() so reversing shows a positive speed.
+            int speed = Mathf.RoundToInt(Mathf.Abs(psm.VehicleController.Speed));
+            if (speed == lastShownSpeed) return;
+            lastShownSpeed = speed;
+
+            string animal = FasterThan(speed);
+            speedComparisonLabel.text = animal != null
+                ? $"Speed: {speed} km/h (faster than {animal})"
+                : $"Speed: {speed} km/h";
         }
 
-        private void ToggleDiscoveryGrid() => SetDiscoveryGridExpanded(!isDiscoveryExpanded);
+        /// <summary>The fastest animal the player is beating, with its article - or null if none.</summary>
+        private static string FasterThan(float speed)
+        {
+            if (speed >= KANGAROO_SPEED) return "a kangaroo";
+            if (speed >= EMU_SPEED) return "an emu";
+            if (speed >= FRILLNECK_LIZARD_SPEED) return "a frillneck lizard";
+            if (speed >= TASMANIAN_DEVIL_SPEED) return "a Tasmanian devil";
+            if (speed >= PLATYPUS_SPEED) return "a platypus";
+            if (speed >= KOALA_SPEED) return "a koala";
+            if (speed >= ECHIDNA_SPEED) return "an echidna";
+            return null;
+        }
+
+        #region Grid open / close
+
+        private void ToggleDiscoveryGrid()
+        {
+            // A manual toggle cancels any pending auto-collapse.
+            if (collapseRoutine != null)
+            {
+                StopCoroutine(collapseRoutine);
+                collapseRoutine = null;
+            }
+            SetDiscoveryGridExpanded(!isDiscoveryExpanded);
+        }
 
         private void SetDiscoveryGridExpanded(bool expanded)
         {
             isDiscoveryExpanded = expanded;
             if (discoveryGrid == null) return;
             discoveryGrid.style.display = expanded ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        /// <summary>
-        /// Fires on every discovery attempt (including re-discovering an
-        /// already-known animal). The grid only auto-pops on a genuinely new one.
-        /// </summary>
-        private void HandleAnimalDiscovered(AnimalData animal, bool isFirstDiscovery)
-        {
-            UpdateDiscoveryDisplay();
-
-            if (isFirstDiscovery)
-            {
-                SetDiscoveryGridExpanded(true);
-                if (collapseRoutine != null) StopCoroutine(collapseRoutine);
-                collapseRoutine = StartCoroutine(CollapseAfterDelay());
-            }
         }
 
         private IEnumerator CollapseAfterDelay()
@@ -192,32 +272,107 @@ namespace RelaxingDrive.UI
             collapseRoutine = null;
         }
 
+        #endregion
+
+        /// <summary>
+        /// Fires on every sighting (new or repeat). Switches the HUD to the
+        /// region of a Local/Remote sighting, and pops the grid open on new ones.
+        /// </summary>
+        private void HandleSighting(SightingContext context, SightingResult result)
+        {
+            if (result.Tier != SightingTier.First)
+                displayedRegion = context.Region;
+
+            UpdateDiscoveryDisplay();
+
+            // Only auto-open if the player hasn't already opened it themselves.
+            if (autoExpandOnNewSighting && result.IsNew && !isDiscoveryExpanded)
+            {
+                SetDiscoveryGridExpanded(true);
+                collapseRoutine = StartCoroutine(CollapseAfterDelay());
+            }
+        }
+
+        /// <summary>The tier the pill, dots, title and stamps are showing.</summary>
+        private SightingTier GetDisplayedTier()
+        {
+            if (sightings == null || !sightings.IsFirstTierComplete())
+                return SightingTier.First;
+
+            return displayedRegion == SightingRegion.Local ? SightingTier.Local : SightingTier.Remote;
+        }
+
         private void UpdateDiscoveryDisplay()
         {
-            if (AnimalDiscoveryManager.Instance == null) return;
+            if (sightings == null || root == null) return;
 
-            int discoveredCount = AnimalDiscoveryManager.Instance.GetDiscoveryCount();
-
-            if (discoveryCountLabel != null)
-                discoveryCountLabel.text = $"{discoveredCount}/{AnimalOrder.Length} found";
+            SightingTier displayedTier = GetDisplayedTier();
+            int total = AnimalOrder.Length;
+            int found = 0;
 
             for (int i = 0; i < AnimalOrder.Length; i++)
             {
-                bool discovered = AnimalDiscoveryManager.Instance.HasDiscovered(AnimalOrder[i]);
+                bool sightedInDisplayedTier = sightings.HasSighted(AnimalOrder[i], displayedTier);
+                if (sightedInDisplayedTier) found++;
 
+                // Dot on the pill
                 if (discoveryDots[i] != null)
                 {
-                    discoveryDots[i].RemoveFromClassList(discovered ? "discovery-dot--empty" : "discovery-dot--filled");
-                    discoveryDots[i].AddToClassList(discovered ? "discovery-dot--filled" : "discovery-dot--empty");
+                    discoveryDots[i].EnableInClassList("discovery-dot--filled", sightedInDisplayedTier);
+                    discoveryDots[i].EnableInClassList("discovery-dot--empty", !sightedInDisplayedTier);
                 }
 
-                VisualElement stamp = root.Q<VisualElement>($"Stamp{ElementSuffixFor(AnimalOrder[i])}");
-                if (stamp != null)
+                // Stamp: inked when sighted in the tier the player is working on
+                if (stamps[i] != null)
                 {
-                    stamp.RemoveFromClassList(discovered ? "undiscovered" : "discovered");
-                    stamp.AddToClassList(discovered ? "discovered" : "undiscovered");
+                    stamps[i].EnableInClassList("discovered", sightedInDisplayedTier);
+                    stamps[i].EnableInClassList("undiscovered", !sightedInDisplayedTier);
+                }
+
+                // Pips: all three tiers, current one emphasised
+                for (int t = 0; t < PipNames.Length; t++)
+                {
+                    VisualElement pip = pips[i, t];
+                    if (pip == null) continue;
+
+                    SightingTier pipTier = (SightingTier)t;
+                    pip.EnableInClassList(PipFilledClass, sightings.HasSighted(AnimalOrder[i], pipTier));
+                    pip.EnableInClassList(PipCurrentClass, pipTier == displayedTier);
                 }
             }
+
+            if (discoveryCountLabel != null)
+                discoveryCountLabel.text = CounterTextFor(displayedTier, found, total);
+
+            if (gridTitleLabel != null)
+                gridTitleLabel.text = $"{AwardNameFor(displayedTier)}  ·  {found} of {total}";
+        }
+
+        private static string CounterTextFor(SightingTier tier, int found, int total)
+        {
+            switch (tier)
+            {
+                case SightingTier.Local: return $"{found} of {total} local animals found";
+                case SightingTier.Remote: return $"{found} of {total} remote animals found";
+                default: return $"{found} of {total} animals found (First Sighting Award)";
+            }
+        }
+
+        /// <summary>
+        /// Award name for the grid title, read from the AwardData assets so the
+        /// HUD and the pop-up always use the same wording.
+        /// </summary>
+        private static string AwardNameFor(SightingTier tier)
+        {
+            AwardManager awards = AwardManager.Instance;
+            if (awards != null)
+            {
+                foreach (AwardData award in awards.Awards)
+                {
+                    if (award.Tier == tier) return award.DisplayName;
+                }
+            }
+            return $"{tier} Sightings"; // fallback if no asset exists for this tier
         }
 
         /// <summary>Maps an animal name to its UXML element-name suffix (StampKangaroo, StampDevil, etc).</summary>

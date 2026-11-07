@@ -1,2 +1,14 @@
 fileFormatVersion: 2
 guid: abd69371995091a42a9cd4f21e9bbf5e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - animalData: {instanceID: 0}
+  - carObject: {instanceID: 0}
+  - walkingPlayerObject: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

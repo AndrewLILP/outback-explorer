@@ -5,17 +5,21 @@
 // Other scripts ask THIS class about input instead of reading keys themselves.
 //
 // Why one reader?
-//   - Keyboard (E / Esc) and gamepad (A / Start) are already merged into one
-//     action each by the Input Actions asset, so no other script needs to know
-//     which device was used.
+//   - Keyboard (E / Esc / Tab) and gamepad (A / Start / View) are already merged
+//     into one action each by the Input Actions asset, so no other script needs
+//     to know which device was used.
 //   - It also tracks which device the player is CURRENTLY using, so prompts
 //     can show "E" or "A" (Steam Deck Verified requirement).
 //
 // Ways to read input, matching how each kind of caller works:
 //   1. POLLING  - InteractPressedThisFrame. For plain C# classes that already run
 //                 in an Update() loop, like DrivingState and OnFootState.
-//   2. EVENTS   - OnPausePressed, OnDeviceChanged (Observer pattern). For
-//                 MonoBehaviours that want to be told when something happens.
+//   2. EVENTS   - OnPausePressed, OnJournalTogglePressed, OnDeviceChanged
+//                 (Observer pattern). For MonoBehaviours that want to be told
+//                 when something happens.
+//
+// UPDATED (Nov 2026): ToggleJournal action (Tab / gamepad View) -> OnJournalTogglePressed.
+// Changes are marked "NEW (journal)".
 //
 // Single Responsibility: this class reads input and reports it. It never
 // enters cars, pauses the game or shows UI.
@@ -41,6 +45,9 @@ namespace RelaxingDrive.Player
 
         /// <summary>Fired once when Pause is pressed (Esc on keyboard, Start / Menu on gamepad).</summary>
         public event Action OnPausePressed;
+
+        /// <summary>NEW (journal): fired once when Toggle Journal is pressed (Tab on keyboard, View on gamepad).</summary>
+        public event Action OnJournalTogglePressed;
 
         /// <summary>Fired when the player switches between keyboard/mouse and gamepad.</summary>
         public event Action<InputDeviceType> OnDeviceChanged;
@@ -77,7 +84,6 @@ namespace RelaxingDrive.Player
         /// <summary>
         /// True only on the frame Interact was pressed (E or A).
         /// Safe to call even if no reader exists in the scene - it just returns false.
-        /// Same "one frame only" behaviour as the old Input.GetKeyDown.
         /// </summary>
         public static bool InteractPressedThisFrame =>
             Instance != null &&
@@ -88,12 +94,12 @@ namespace RelaxingDrive.Player
         public InputDeviceType CurrentDevice => currentDevice;
 
         /// <summary>
-        /// The key/button name for Interact on the CURRENT device, read from the
-        /// Input Actions asset (e.g. "E" on keyboard, "A" on gamepad).
-        /// Because it reads the bindings, changing a binding in the asset updates
-        /// every prompt automatically - no hard-coded "E" anywhere.
+        /// The key/button name for Interact on the CURRENT device (e.g. "E" or "A").
         /// </summary>
         public string InteractLabel => GetBindingLabel(controls?.GamePlay.Interact);
+
+        /// <summary>NEW (journal): key/button name for Toggle Journal on the current device (e.g. "Tab" or "View").</summary>
+        public string JournalToggleLabel => GetBindingLabel(controls?.GamePlay.ToggleJournal);
 
         #endregion
 
@@ -114,8 +120,6 @@ namespace RelaxingDrive.Player
             controls = new SundayDriveControls();
 
             // Starting guess: if a gamepad is connected, assume the player uses it.
-            // On Steam Deck this means gamepad prompts from the very first frame.
-            // On a PC, the first key press corrects it.
             currentDevice = Gamepad.current != null ? InputDeviceType.Gamepad : InputDeviceType.KeyboardMouse;
             Log($"Created SundayDriveControls. Starting device: {currentDevice}");
         }
@@ -126,6 +130,7 @@ namespace RelaxingDrive.Player
             if (controls == null) return;
 
             controls.GamePlay.Pause.performed += HandlePausePerformed;
+            controls.GamePlay.ToggleJournal.performed += HandleJournalTogglePerformed; // NEW (journal)
 
             // Actions do nothing until enabled - the most common Input System gotcha.
             controls.GamePlay.Enable();
@@ -138,6 +143,7 @@ namespace RelaxingDrive.Player
 
             // Mirror OnEnable exactly: unsubscribe, then disable.
             controls.GamePlay.Pause.performed -= HandlePausePerformed;
+            controls.GamePlay.ToggleJournal.performed -= HandleJournalTogglePerformed; // NEW (journal)
             controls.GamePlay.Disable();
             Log("GamePlay actions disabled");
         }
@@ -155,9 +161,7 @@ namespace RelaxingDrive.Player
                 Instance = null;
             }
 
-            // Frees the runtime copy of the actions asset. The generated class warns
-            // about a leak if the map is still enabled, which is why OnDisable
-            // (which always runs before OnDestroy) disables it first.
+            // Frees the runtime copy of the actions asset.
             controls?.Dispose();
             controls = null;
         }
@@ -168,8 +172,7 @@ namespace RelaxingDrive.Player
 
         /// <summary>
         /// Each frame, checks whether the player deliberately used a different device.
-        /// "Deliberately" matters: stick drift or a resting thumb on a trackpad must
-        /// NOT flip the prompts, or they'd flicker between E and A.
+        /// Stick drift or a resting thumb on a trackpad must NOT flip the prompts.
         /// </summary>
         private void DetectActiveDevice()
         {
@@ -198,10 +201,8 @@ namespace RelaxingDrive.Player
             // Cheap early-out: nothing on the pad changed this frame.
             if (pad == null || !pad.wasUpdatedThisFrame) return false;
 
-            // Every face button, shoulder, trigger, d-pad direction AND stick direction
-            // (e.g. leftStick/up) is a ButtonControl with a built-in press threshold
-            // (about halfway). So "was any button pressed this frame?" ignores small
-            // stick drift for free. Looping a ReadOnlyArray doesn't allocate garbage.
+            // Every button, trigger, d-pad and stick direction is a ButtonControl with
+            // a press threshold, so small stick drift is ignored for free.
             foreach (InputControl control in pad.allControls)
             {
                 if (control is ButtonControl button && button.wasPressedThisFrame)
@@ -229,7 +230,6 @@ namespace RelaxingDrive.Player
                 return true;
             }
 
-            // Optional (off by default) - see the tooltip on mouseMovementSwitchesToKeyboard.
             if (mouseMovementSwitchesToKeyboard &&
                 mouse.delta.ReadValue().sqrMagnitude > mouseMoveThreshold * mouseMoveThreshold)
             {
@@ -246,7 +246,6 @@ namespace RelaxingDrive.Player
         /// <summary>
         /// Returns the display name of an action's binding for the current device,
         /// using the control scheme names from the asset ("Keyboard&Mouse" / "GamePad").
-        /// Uses the generated scheme properties, so a typo is a compile error, not a bug.
         /// </summary>
         private string GetBindingLabel(InputAction action)
         {
@@ -256,8 +255,6 @@ namespace RelaxingDrive.Player
                 ? controls.GamePadScheme.bindingGroup
                 : controls.KeyboardMouseScheme.bindingGroup;
 
-            // Only look at bindings in that scheme. Unity returns short names where
-            // the device defines them, e.g. "A" for the gamepad's south button.
             string label = action.GetBindingDisplayString(InputBinding.MaskByGroup(group));
             return string.IsNullOrEmpty(label) ? "?" : label;
         }
@@ -270,6 +267,13 @@ namespace RelaxingDrive.Player
         {
             Log($"Pause pressed ({context.control.device.displayName})");
             OnPausePressed?.Invoke();
+        }
+
+        // NEW (journal)
+        private void HandleJournalTogglePerformed(InputAction.CallbackContext context)
+        {
+            Log($"Toggle Journal pressed ({context.control.device.displayName})");
+            OnJournalTogglePressed?.Invoke();
         }
 
         #endregion

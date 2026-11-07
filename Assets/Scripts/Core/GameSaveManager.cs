@@ -6,6 +6,9 @@
 // BUG FIX: StartNewGame() destroys DontDestroyOnLoad singletons before scene reload
 // BUG FIX: StartNewGame(sceneToLoad) lets the pause menu reload the GAMEPLAY scene
 //          (from PauseMenuScene, the active scene is the pause scene, not gameplay)
+//
+// UPDATED (Nov 2026): saves/loads/resets SightingManager's Local and Remote
+// sighting lists (save version 2). Changes are marked "NEW (sightings)".
 
 using System.Collections.Generic;
 using System.IO;
@@ -214,6 +217,7 @@ namespace RelaxingDrive.Core
                     Debug.Log($"- Saved: {saveData.saveTimestamp}");
                     Debug.Log($"- Zones Visited: {saveData.zoneIDs.Count}");
                     Debug.Log($"- Animals Discovered: {saveData.discoveredAnimals.Count}");
+                    Debug.Log($"- Local/Remote Sightings: {saveData.localSightings.Count}/{saveData.remoteSightings.Count}"); // NEW (sightings)
                     Debug.Log($"- Buildings Activated: {saveData.activatedBuildingIDs.Count}");
                     Debug.Log("[GameSaveManager] ✅ Save successful!");
                 }
@@ -258,6 +262,7 @@ namespace RelaxingDrive.Core
                     Debug.Log($"- Saved: {saveData.saveTimestamp}");
                     Debug.Log($"- Zones Visited: {saveData.zoneIDs.Count}");
                     Debug.Log($"- Animals Discovered: {saveData.discoveredAnimals.Count}");
+                    Debug.Log($"- Local/Remote Sightings: {saveData.localSightings.Count}/{saveData.remoteSightings.Count}"); // NEW (sightings)
                     Debug.Log($"- Buildings Activated: {saveData.activatedBuildingIDs.Count}");
                     Debug.Log("[GameSaveManager] Auto-loaded save file on start");
                 }
@@ -301,12 +306,20 @@ namespace RelaxingDrive.Core
                 Debug.Log($"[GameSaveManager] Collected {saveData.zoneIDs.Count} zone visit counts");
             }
 
-            // Collect discovered animals from AnimalDiscoveryManager
+            // Collect discovered animals from AnimalDiscoveryManager (= First tier)
             if (AnimalDiscoveryManager.Instance != null)
             {
                 HashSet<string> discoveredAnimals = AnimalDiscoveryManager.Instance.GetDiscoveredAnimals();
                 saveData.discoveredAnimals = new List<string>(discoveredAnimals);
                 Debug.Log($"[GameSaveManager] Saved {saveData.discoveredAnimals.Count} discovered animals");
+            }
+
+            // NEW (sightings): collect Local and Remote sightings from SightingManager
+            if (SightingManager.Instance != null)
+            {
+                saveData.localSightings = SightingManager.Instance.GetSightings(SightingRegion.Local);
+                saveData.remoteSightings = SightingManager.Instance.GetSightings(SightingRegion.Remote);
+                Debug.Log($"[GameSaveManager] Saved {saveData.localSightings.Count} local / {saveData.remoteSightings.Count} remote sightings");
             }
 
             // Collect activated building IDs
@@ -327,12 +340,20 @@ namespace RelaxingDrive.Core
                 Debug.Log($"[GameSaveManager] Loaded visit data for {visitDict.Count} zones");
             }
 
-            // Restore discovered animals to AnimalDiscoveryManager
+            // Restore discovered animals to AnimalDiscoveryManager (= First tier)
             if (AnimalDiscoveryManager.Instance != null)
             {
                 HashSet<string> discoveredAnimals = new HashSet<string>(saveData.discoveredAnimals);
                 AnimalDiscoveryManager.Instance.LoadDiscoveryData(discoveredAnimals);
                 Debug.Log($"[GameSaveManager] Loaded {saveData.discoveredAnimals.Count} discovered animals");
+            }
+
+            // NEW (sightings): restore Local and Remote sightings.
+            // Version 1 saves have no lists - JsonUtility leaves them empty, which is correct.
+            if (SightingManager.Instance != null)
+            {
+                SightingManager.Instance.LoadSightingData(saveData.localSightings, saveData.remoteSightings);
+                Debug.Log($"[GameSaveManager] Loaded {saveData.localSightings.Count} local / {saveData.remoteSightings.Count} remote sightings");
             }
 
             // Restore activated buildings
@@ -476,6 +497,13 @@ namespace RelaxingDrive.Core
                 Debug.Log("[GameSaveManager] - Destroyed AnimalDiscoveryManager");
             }
 
+            // NEW (sightings): Destroy SightingManager
+            if (SightingManager.Instance != null)
+            {
+                Destroy(SightingManager.Instance.gameObject);
+                Debug.Log("[GameSaveManager] - Destroyed SightingManager");
+            }
+
             // Destroy GameSaveManager (this instance)
             Debug.Log("[GameSaveManager] - Destroying GameSaveManager");
             Destroy(gameObject);
@@ -506,6 +534,13 @@ namespace RelaxingDrive.Core
             {
                 AnimalDiscoveryManager.Instance.ResetAllDiscoveries();
                 Debug.Log("[GameSaveManager] - AnimalDiscoveryManager reset");
+            }
+
+            // NEW (sightings): Reset SightingManager
+            if (SightingManager.Instance != null)
+            {
+                SightingManager.Instance.ResetAllSightings();
+                Debug.Log("[GameSaveManager] - SightingManager reset");
             }
 
             Debug.Log("[GameSaveManager] - All managers reset complete");
