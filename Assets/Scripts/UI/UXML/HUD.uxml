@@ -103,6 +103,13 @@
             <ui:Label name="MissionText" class="mission-text" />
         </ui:VisualElement>
 
+        <!-- NEW (roads): road name card, top-centre (RoadNameUI). Ignores clicks. -->
+        <ui:VisualElement name="RoadName" class="road-name road-name--hidden" picking-mode="Ignore">
+            <ui:VisualElement name="RoadNameCard" class="road-name-card" picking-mode="Ignore">
+                <ui:Label name="RoadNameText" text="Kangaroo Way" class="road-name-text" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <!-- Centred award card (AwardPopupUI). Full-screen, ignores clicks. -->
         <ui:VisualElement name="AwardPopup" class="award-popup award-popup--hidden" picking-mode="Ignore">
             <ui:VisualElement name="AwardCard" class="award-card" picking-mode="Ignore">
