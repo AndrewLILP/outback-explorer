@@ -14,11 +14,20 @@ namespace RelaxingDrive.Player
     /// resolved immediately) and RCC (Steam scenes, car spawned dynamically
     /// by RCC_Spawner in Start() - resolved via RCC_SceneManager.OnVehicleChanged,
     /// since Awake() runs too early to see it).
+    ///
+    /// Observer: raises OnStateChanged after every state change, so other systems
+    /// (e.g. AudioStateMixer) can react without this class knowing they exist.
     /// </summary>
     public class PlayerStateManager : MonoBehaviour, IActivePlayerProvider
     {
         private static PlayerStateManager instance;
         public static PlayerStateManager Instance => instance;
+
+        /// <summary>
+        /// Fired AFTER the new state's Enter() has run, so listeners can safely
+        /// check IsDriving / IsOnFoot. Passes the new state.
+        /// </summary>
+        public event System.Action<PlayerState> OnStateChanged;
 
         [Header("References")]
         [Tooltip("Leave empty for RCC scenes - resolved automatically once RCC_Spawner spawns the car. Assign directly for PolyStang scenes.")]
@@ -55,7 +64,7 @@ namespace RelaxingDrive.Player
         public Vector3 WalkingCameraOffset => walkingCameraOffset;
         public Vector3 ExitCarOffset => exitCarOffset;
 
-                public bool IsDriving => currentState is DrivingState;
+        public bool IsDriving => currentState is DrivingState;
         public bool IsOnFoot => currentState is OnFootState;
 
         // IActivePlayerProvider: the transform the player is currently controlling.
@@ -167,6 +176,9 @@ namespace RelaxingDrive.Player
 
             if (logStateChanges)
                 Debug.Log($"[PlayerStateManager] State changed: {oldStateName} → {newStateName}");
+
+            // Tell listeners LAST - the new state is fully set up by now.
+            OnStateChanged?.Invoke(currentState);
         }
 
         public void SwitchToDriving() => ChangeState(drivingState);

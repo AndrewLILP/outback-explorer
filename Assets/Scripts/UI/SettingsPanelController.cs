@@ -11,6 +11,8 @@
 //   - the owning menu: showing/hiding the panel, focus, navigation, sounds
 // It raises events so the menu can play feedback sounds without this class
 // knowing anything about audio clips.
+//
+// Nov 2026: added Ambience and Car sliders (MainMixer groups of the same names).
 
 using System;
 using System.Collections.Generic;
@@ -35,11 +37,15 @@ namespace RelaxingDrive.UI
 
         private readonly SliderInt masterSlider;
         private readonly SliderInt musicSlider;
+        private readonly SliderInt ambienceSlider;
+        private readonly SliderInt carSlider;
         private readonly SliderInt sfxSlider;
         private readonly Toggle fullscreenToggle;
 
         private readonly Label masterValue;
         private readonly Label musicValue;
+        private readonly Label ambienceValue;
+        private readonly Label carValue;
         private readonly Label sfxValue;
         private readonly Label fullscreenValue;
 
@@ -57,6 +63,8 @@ namespace RelaxingDrive.UI
             {
                 if (masterSlider != null) yield return masterSlider;
                 if (musicSlider != null) yield return musicSlider;
+                if (ambienceSlider != null) yield return ambienceSlider;
+                if (carSlider != null) yield return carSlider;
                 if (sfxSlider != null) yield return sfxSlider;
                 if (fullscreenToggle != null) yield return fullscreenToggle;
             }
@@ -67,16 +75,22 @@ namespace RelaxingDrive.UI
         {
             masterSlider = panel.Q<SliderInt>("MasterSlider");
             musicSlider = panel.Q<SliderInt>("MusicSlider");
+            ambienceSlider = panel.Q<SliderInt>("AmbienceSlider");
+            carSlider = panel.Q<SliderInt>("CarSlider");
             sfxSlider = panel.Q<SliderInt>("SfxSlider");
             fullscreenToggle = panel.Q<Toggle>("FullscreenToggle");
 
             masterValue = panel.Q<Label>("MasterValue");
             musicValue = panel.Q<Label>("MusicValue");
+            ambienceValue = panel.Q<Label>("AmbienceValue");
+            carValue = panel.Q<Label>("CarValue");
             sfxValue = panel.Q<Label>("SfxValue");
             fullscreenValue = panel.Q<Label>("FullscreenValue");
 
             SetupSlider(masterSlider);
             SetupSlider(musicSlider);
+            SetupSlider(ambienceSlider);
+            SetupSlider(carSlider);
             SetupSlider(sfxSlider);
 
             masterSlider?.RegisterValueChangedCallback(evt =>
@@ -90,6 +104,20 @@ namespace RelaxingDrive.UI
             {
                 GameSettings.SetMusicVolume(evt.newValue);
                 SetPercent(musicValue, evt.newValue);
+                OnSettingChanged?.Invoke();
+            });
+
+            ambienceSlider?.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetAmbienceVolume(evt.newValue);
+                SetPercent(ambienceValue, evt.newValue);
+                OnSettingChanged?.Invoke();
+            });
+
+            carSlider?.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetCarVolume(evt.newValue);
+                SetPercent(carValue, evt.newValue);
                 OnSettingChanged?.Invoke();
             });
 
@@ -120,11 +148,15 @@ namespace RelaxingDrive.UI
 
             masterSlider?.SetValueWithoutNotify(GameSettings.MasterVolume);
             musicSlider?.SetValueWithoutNotify(GameSettings.MusicVolume);
+            ambienceSlider?.SetValueWithoutNotify(GameSettings.AmbienceVolume);
+            carSlider?.SetValueWithoutNotify(GameSettings.CarVolume);
             sfxSlider?.SetValueWithoutNotify(GameSettings.SfxVolume);
             fullscreenToggle?.SetValueWithoutNotify(GameSettings.IsFullscreen);
 
             SetPercent(masterValue, GameSettings.MasterVolume);
             SetPercent(musicValue, GameSettings.MusicVolume);
+            SetPercent(ambienceValue, GameSettings.AmbienceVolume);
+            SetPercent(carValue, GameSettings.CarVolume);
             SetPercent(sfxValue, GameSettings.SfxVolume);
             SetOnOff(fullscreenValue, GameSettings.IsFullscreen);
         }
