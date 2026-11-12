@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1045ef54ae703dd49b3ef474ef8e7a37, type: 3}
   m_Name: Prototype
   m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.World.RoadData
-  displayName: Prototype Area - Checking Core Loop and controllers (E / A for walking)
+  displayName: Find 7 Australian Animals
   linkedAnimal: {fileID: 0}

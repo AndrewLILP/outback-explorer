@@ -141,7 +141,6 @@ GameObject:
   - component: {fileID: 4001997048740264791}
   - component: {fileID: 389381039923403595}
   - component: {fileID: 6809756654617435293}
-  - component: {fileID: 1956322421932590058}
   m_Layer: 0
   m_Name: Emu
   m_TagString: Untagged
@@ -253,25 +252,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalData: {fileID: 11400000, guid: 0d23fc0b3f6e3954498bf702b37c5ba2, type: 2}
+  region: 0
   detectionInterval: 0.5
   carObject: {fileID: 0}
   walkingPlayerObject: {fileID: 0}
   showDetectionGizmo: 1
-  gizmoColor: {r: 0.3, g: 1, b: 0.3, a: 0.3}
   showDebugMessages: 1
---- !u!114 &1956322421932590058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2773066689086760044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aae63a8e03d40ed498dcf222890c5e40, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RCC_Teleporter
-  spawnPoint: {fileID: 0}
 --- !u!1 &2869535156790128644
 GameObject:
   m_ObjectHideFlags: 0

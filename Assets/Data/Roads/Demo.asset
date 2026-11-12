@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1045ef54ae703dd49b3ef474ef8e7a37, type: 3}
   m_Name: Demo
   m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.World.RoadData
-  displayName: Demo Area
+  displayName: More local animals are nearby
   linkedAnimal: {fileID: 0}
