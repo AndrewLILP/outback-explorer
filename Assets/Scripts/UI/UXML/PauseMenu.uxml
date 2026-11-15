@@ -9,13 +9,16 @@
             <ui:Button name="SaveButton" text="Save game" class="pause-button"/>
             <ui:Button name="InstructionsButton" text="How to play" class="pause-button"/>
             <ui:Button name="SettingsButton" text="Settings" class="pause-button"/>
+            <!-- Car selection scene is disabled for now. Restore this line (and the
+                 matching lines in PauseMenuSceneController.cs) to bring it back.
             <ui:Button name="ChangeCarsButton" text="Change car" class="pause-button"/>
+            -->
             <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
             <ui:Button name="QuitButton" text="Quit to desktop" class="pause-button pause-button--quiet"/>
             <ui:Label text="Esc / B  back" class="pause-hint"/>
         </ui:VisualElement>
 
-        <!-- How to play -->
+        <!-- How to play. Grouped: driving / camera / system. -->
         <ui:VisualElement name="InstructionsPanel" class="instructions-panel" style="display: none;">
             <ui:Label text="How to play" class="instructions-title"/>
             <ui:VisualElement name="TutorialAnimationSlot" class="tutorial-animation-slot"/>
@@ -23,9 +26,12 @@
                 <ui:Label text="Drive  —  WASD / arrow keys  ·  left stick + triggers" class="instruction-line"/>
                 <ui:Label text="Handbrake  —  Space" class="instruction-line"/>
                 <ui:Label text="Enter / exit car  —  E  ·  A" class="instruction-line"/>
-                <ui:Label text="Look around  —  Mouse  ·  right stick" class="instruction-line"/>
-                <ui:Label text="Pause  —  Esc  ·  Menu" class="instruction-line"/>
                 <ui:Label class="instruction-spacer"/>
+                <ui:Label text="Look around  —  hold right mouse  ·  right stick" class="instruction-line"/>
+                <ui:Label text="Camera distance  —  V  ·  View" class="instruction-line"/>
+                <ui:Label text="Chase / hood view  —  C  ·  B" class="instruction-line"/>
+                <ui:Label class="instruction-spacer"/>
+                <ui:Label text="Pause  —  Esc  ·  Menu" class="instruction-line"/>
                 <ui:Label text="Your game saves automatically." class="instruction-line"/>
             </ui:VisualElement>
             <ui:Button name="CloseInstructionsButton" text="Back" class="pause-button"/>
@@ -50,16 +56,16 @@
                 </ui:VisualElement>
 
                 <ui:VisualElement class="settings-row">
-    <ui:Label text="Nature sounds" class="settings-label"/>
-    <ui:SliderInt name="AmbienceSlider" low-value="0" high-value="10" value="8" class="settings-slider"/>
-    <ui:Label name="AmbienceValue" text="80%" class="settings-value"/>
-</ui:VisualElement>
+                    <ui:Label text="Nature sounds" class="settings-label"/>
+                    <ui:SliderInt name="AmbienceSlider" low-value="0" high-value="10" value="8" class="settings-slider"/>
+                    <ui:Label name="AmbienceValue" text="80%" class="settings-value"/>
+                </ui:VisualElement>
 
-<ui:VisualElement class="settings-row">
-    <ui:Label text="Car volume" class="settings-label"/>
-    <ui:SliderInt name="CarSlider" low-value="0" high-value="10" value="1" class="settings-slider"/>
-    <ui:Label name="CarValue" text="10%" class="settings-value"/>
-</ui:VisualElement>
+                <ui:VisualElement class="settings-row">
+                    <ui:Label text="Car volume" class="settings-label"/>
+                    <ui:SliderInt name="CarSlider" low-value="0" high-value="10" value="1" class="settings-slider"/>
+                    <ui:Label name="CarValue" text="10%" class="settings-value"/>
+                </ui:VisualElement>
 
                 <ui:VisualElement class="settings-row">
                     <ui:Label text="Sound effects" class="settings-label"/>

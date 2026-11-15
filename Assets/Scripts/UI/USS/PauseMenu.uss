@@ -37,12 +37,14 @@
 
 /* ---------- Buttons ---------- */
 
+/* Rectangular buttons. border-radius 4px just softens the corners;
+   set to 0px for hard square corners, or 999px for the old pill shape. */
 .pause-button {
     width: 280px;
     height: 44px;
     margin: 6px;
     background-color: rgba(196, 110, 58, 0.25);
-    border-radius: 999px;
+    border-radius: 4px;
     border-width: 2px;
     border-color: rgba(196, 164, 105, 0.45);
     color: rgb(238, 230, 214);

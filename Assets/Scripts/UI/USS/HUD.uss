@@ -13,6 +13,10 @@
    - First  = cream  rgb(238, 230, 214)
    - Local  = olive  rgb(122, 138, 84)
    - Remote = rust   rgb(196, 110, 58)
+
+   Shape language (Nov 2026): rectangles with softly rounded corners
+   everywhere - 6px for small cards, 8px for larger panels, 2-4px for
+   chips and markers. Matches the speed readout, road name and speed warning.
 */
 
 .hud-container {
@@ -26,7 +30,7 @@
    =================================== */
 .speed-panel {
     position: absolute;
-    bottom: 30px;          /* lines up with the discovery pill on the left */
+    bottom: 30px;          /* lines up with the discovery bar on the left */
     right: 30px;
     align-items: flex-end;
 }
@@ -45,7 +49,10 @@
 }
 
 /* ===================================
-   DISCOVERY WIDGET (bottom-left: pill + expandable stamp grid)
+   DISCOVERY WIDGET (bottom-left: bar + expandable stamp grid)
+   CHANGED (rectangles): pill -> rectangle bar, round dots -> square
+   markers, circle stamps -> rectangle tiles in a tidy 4 + 3 grid.
+   Class names are unchanged, so HUDController.cs needs no edits.
    =================================== */
 .discovery-widget {
     position: absolute;
@@ -54,36 +61,35 @@
     align-items: flex-start;
 }
 
+/* The bar (still called "pill" in code/UXML) */
 .discovery-pill {
     flex-direction: row;
     align-items: center;
     background-color: rgba(44, 38, 28, 0.85);
-    border-radius: 999px;
+    border-radius: 6px;                        /* rectangle, same as speed readout */
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.55);
-    padding: 8px 16px;
+    padding: 8px 14px;
     margin: 0;
     transition-duration: 0.15s;
 }
 
+/* Hover only brightens the border - no scaling, so the bar stays put */
 .discovery-pill:hover {
     border-color: rgba(196, 164, 105, 0.9);
-    scale: 1.03;
 }
 
-.discovery-pill:active {
-    scale: 0.97;
-}
-
+/* Square progress markers */
 .discovery-dots {
     flex-direction: row;
+    align-items: center;
 }
 
 .discovery-dot {
     width: 8px;
     height: 8px;
-    border-radius: 4px;
-    margin-right: 5px;
+    border-radius: 2px;
+    margin-right: 4px;
 }
 
 .discovery-dot--empty {
@@ -97,63 +103,79 @@
 .discovery-count-label {
     font-size: 13px;
     color: rgb(238, 230, 214);
-    margin-left: 4px;
+    margin-left: 6px;
     -unity-text-align: middle-left;
 }
 
-/* CHANGED (pips): the grid is now a column - title, stamp row, legend */
+/* Grid panel: title, stamp tiles, legend.
+   Fixed width = 4 tiles per row (4 x 86px) + padding, so rows always line up. */
 .discovery-grid {
     flex-direction: column;
-    max-width: 380px;
+    width: 372px;
     background-color: rgba(44, 38, 28, 0.9);
-    border-radius: 12px;
+    border-radius: 8px;
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.55);
-    padding: 12px;
+    padding: 12px 10px;
     margin-bottom: 8px;
 }
 
-/* NEW (pips): "Local Sightings Award · 3 of 7" */
+/* "Local Sightings Award · 3 of 7" */
 .grid-title {
     font-size: 13px;
     -unity-font-style: bold;
     color: rgb(196, 164, 105);  /* brass */
-    -unity-text-align: middle-center;
+    -unity-text-align: middle-left;
+    padding: 0 4px 8px 4px;
     margin-bottom: 8px;
+    border-bottom-width: 1px;
+    border-color: rgba(196, 164, 105, 0.25);   /* thin divider under the title */
 }
 
-/* NEW (pips): holds the 7 stamps (was the grid itself) */
+/* Holds the 7 tiles. Second row of 3 is centred under the first row of 4. */
 .stamp-row {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
 }
 
+/* One tile per animal */
 .stamp {
-    width: 64px;
+    width: 78px;
     align-items: center;
-    margin: 4px 6px;
+    margin: 4px;
+    padding: 8px 4px 6px 4px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(196, 164, 105, 0.18);
+    background-color: rgba(238, 230, 214, 0.04);
 }
 
+/* Two-letter code chip */
 .stamp-code {
-    width: 38px;
-    height: 38px;
-    border-radius: 19px;
+    width: 44px;
+    height: 28px;
+    border-radius: 4px;
     -unity-text-align: middle-center;
     font-size: 13px;
     -unity-font-style: bold;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    padding: 0;
 }
 
+/* Fixed height fits two lines ("Tasmanian devil"), so every tile is the same size.
+   12px = Deck-readable minimum we aim for. */
 .stamp-name {
-    font-size: 10px;
+    font-size: 12px;
+    height: 30px;
     color: rgba(196, 180, 150, 0.9);
     -unity-text-align: upper-center;
     white-space: normal;
+    padding: 0;
+    margin: 0;
 }
 
-/* Undiscovered - faint outline (UI Toolkit has no dashed border, so a thin
-   low-contrast border approximates the "blank passport page" look) */
+/* Undiscovered - faint outline chip, dimmed tile */
 .stamp.undiscovered .stamp-code {
     background-color: rgba(0, 0, 0, 0);
     border-width: 1px;
@@ -161,71 +183,86 @@
     color: rgba(196, 180, 150, 0.5);
 }
 
-/* Discovered - filled ink-stamp circle, slight rotation per species for a
-   hand-stamped feel. "Discovered" now means: sighted in the tier shown. */
+.stamp.undiscovered .stamp-name {
+    color: rgba(196, 180, 150, 0.55);
+}
+
+/* Discovered (= sighted in the tier shown) - filled chip in the species
+   colour, tile border picks up the same colour. No rotation: rectangles
+   read cleaner squared up. */
+.stamp.discovered {
+    background-color: rgba(238, 230, 214, 0.07);
+}
+
 .stamp.discovered .stamp-code {
-    border-width: 2px;
+    border-width: 1px;
     color: rgb(44, 38, 28);
 }
 
+.stamp.discovered .stamp-name {
+    color: rgb(238, 230, 214);
+}
+
+.stamp.kangaroo.discovered { border-color: rgba(196, 110, 58, 0.6); }
 .stamp.kangaroo.discovered .stamp-code {
     background-color: rgb(196, 110, 58);
     border-color: rgb(140, 75, 35);
-    rotate: -6deg;
 }
 
+.stamp.frillneck.discovered { border-color: rgba(122, 138, 84, 0.6); }
 .stamp.frillneck.discovered .stamp-code {
     background-color: rgb(122, 138, 84);
     border-color: rgb(85, 100, 55);
-    rotate: 5deg;
 }
 
+.stamp.emu.discovered { border-color: rgba(180, 150, 90, 0.6); }
 .stamp.emu.discovered .stamp-code {
     background-color: rgb(180, 150, 90);
     border-color: rgb(130, 105, 60);
-    rotate: -3deg;
 }
 
+.stamp.echidna.discovered { border-color: rgba(140, 100, 70, 0.6); }
 .stamp.echidna.discovered .stamp-code {
     background-color: rgb(140, 100, 70);
     border-color: rgb(95, 65, 45);
-    rotate: 4deg;
 }
 
+/* Devil chip is dark, so its code text is cream instead of brown */
+.stamp.devil.discovered { border-color: rgba(120, 104, 94, 0.7); }
 .stamp.devil.discovered .stamp-code {
     background-color: rgb(90, 78, 70);
     border-color: rgb(55, 46, 40);
-    rotate: -4deg;
+    color: rgb(238, 230, 214);
 }
 
+.stamp.koala.discovered { border-color: rgba(150, 150, 140, 0.6); }
 .stamp.koala.discovered .stamp-code {
     background-color: rgb(150, 150, 140);
     border-color: rgb(105, 105, 98);
-    rotate: 6deg;
 }
 
+.stamp.platypus.discovered { border-color: rgba(94, 124, 130, 0.7); }
 .stamp.platypus.discovered .stamp-code {
     background-color: rgb(94, 124, 130);
     border-color: rgb(60, 85, 90);
-    rotate: -5deg;
 }
 
 /* ===================================
-   NEW (pips): three small dots under each stamp - First / Local / Remote
-   Empty = faint ring. Filled = tier colour. Current tier = slightly larger.
+   PIPS: three small square markers per tile - First / Local / Remote
+   Empty = faint outline. Filled = tier colour. Current tier = slightly larger.
    =================================== */
 .stamp-pips {
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    margin-top: 3px;
+    margin-top: 4px;
     height: 10px;
 }
 
 .pip {
-    width: 6px;
-    height: 6px;
-    border-radius: 3px;
+    width: 7px;
+    height: 7px;
+    border-radius: 1px;
     margin: 0 2px;
     border-width: 1px;
     border-color: rgba(196, 180, 150, 0.45);
@@ -235,7 +272,6 @@
 .pip.pip--current {
     width: 9px;
     height: 9px;
-    border-radius: 4.5px;
     border-color: rgba(238, 230, 214, 0.8);
 }
 
@@ -254,19 +290,22 @@
     border-color: rgb(196, 110, 58);
 }
 
-/* Legend row at the bottom of the grid */
+/* Legend row at the bottom of the grid, with a divider above it */
 .pip-legend {
     flex-direction: row;
     justify-content: center;
     align-items: center;
     margin-top: 8px;
+    padding-top: 8px;
+    border-top-width: 1px;
+    border-color: rgba(196, 164, 105, 0.25);
 }
 
 .pip-legend-label {
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(196, 180, 150, 0.9);
-    margin-left: 2px;
-    margin-right: 10px;
+    margin-left: 3px;
+    margin-right: 12px;
 }
 
 /* ===================================
@@ -277,7 +316,7 @@
     top: 30px;
     left: 30px;
     background-color: rgba(44, 38, 28, 0.85);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 10px 20px;
     min-width: 200px;
     display: none;
@@ -290,14 +329,13 @@
 
 /* ===================================
    SPEED WARNING (full-screen, centred "Take your time")
-   Same leather pill as .speed-comparison-text, scaled up.
    =================================== */
 .speed-warning {
     position: absolute;
     top: 0; bottom: 0; left: 0; right: 0;
     align-items: center;
     justify-content: center;
-    background-color: rgba(20, 16, 10, 0.25); /* soft dim behind the pill */
+    background-color: rgba(20, 16, 10, 0.25); /* soft dim behind the card */
     opacity: 1;
     transition-property: opacity;
     transition-duration: 0.6s;
@@ -307,7 +345,7 @@
     opacity: 0;
 }
 
-/* CHANGED (limit): rectangle card holding two lines */
+/* Rectangle card holding two lines */
 .speed-warning-card {
     background-color: rgba(44, 38, 28, 0.88);  /* panel surface */
     border-radius: 8px;                        /* rectangle, softened corners */
@@ -323,7 +361,7 @@
     -unity-text-align: middle-center;
 }
 
-/* NEW (limit): "65 km/h" under the message */
+/* "65 km/h" under the message */
 .speed-warning-limit {
     font-size: 22px;
     -unity-font-style: bold;
@@ -333,8 +371,7 @@
 }
 
 /* ===================================
-   NEW (roads): ROAD NAME (top-centre card, RoadNameUI)
-   Same rectangle card styling as the speed warning, a little smaller.
+   ROAD NAME (top-centre card, RoadNameUI)
    To show it in the screen centre instead: change "top: 40px" to "top: 40%".
    =================================== */
 .road-name {
@@ -354,7 +391,7 @@
 
 .road-name-card {
     background-color: rgba(44, 38, 28, 0.88);  /* panel surface */
-    border-radius: 8px;                        /* rectangle, like the speed warning */
+    border-radius: 8px;
     border-width: 1px;
     border-color: rgba(196, 164, 105, 0.55);   /* brass border */
     padding: 10px 32px;
@@ -369,8 +406,8 @@
 
 /* ===================================
    AWARD POP-UP (centred card, AwardPopupUI)
-   Same leather/brass palette as the speed warning, with a rust
-   border so it reads as a reward rather than a nudge.
+   CHANGED (rectangles): 18px -> 8px corners to match the other cards.
+   Rust border so it reads as a reward rather than a nudge.
    =================================== */
 .award-popup {
     position: absolute;
@@ -390,7 +427,7 @@
 
 .award-card {
     background-color: rgba(44, 38, 28, 0.92);  /* panel surface */
-    border-radius: 18px;
+    border-radius: 8px;
     border-width: 2px;
     border-color: rgb(196, 110, 58);            /* rust accent */
     padding: 18px 44px;

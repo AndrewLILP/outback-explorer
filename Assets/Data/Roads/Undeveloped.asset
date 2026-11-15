@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1045ef54ae703dd49b3ef474ef8e7a37, type: 3}
   m_Name: Undeveloped
   m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.World.RoadData
-  displayName: Undeveloped Area - turn around to see animals - continue to test fast
+  displayName: Undeveloped Area - turn around to see animals - continue to test Highway
     driving
   linkedAnimal: {fileID: 0}

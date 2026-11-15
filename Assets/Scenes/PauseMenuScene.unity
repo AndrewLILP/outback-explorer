@@ -736,10 +736,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenuSceneController
   gameplaySceneName: RCC_City_CarSelectionWithLoadedScene
   carSelectionSceneName: RCC_City_CarSelectionWithLoadScene
-  navigateSound: {fileID: 8300000, guid: d5d63734fe1ea495896492beff3e374f, type: 3}
-  submitSound: {fileID: 8300000, guid: 8d3ddfbc69660b342b48f88b496dedee, type: 3}
+  navigateSound: {fileID: 8300000, guid: 8d3ddfbc69660b342b48f88b496dedee, type: 3}
+  submitSound: {fileID: 8300000, guid: a8cfbfa0153a85c4da8402ee5479a3de, type: 3}
   backSound: {fileID: 8300000, guid: 936bf151add95ea4fbd98fecd83943c5, type: 3}
-  uiVolume: 0.6
+  uiVolume: 0.1
   tickMinInterval: 0.06
   inputGraceSeconds: 0.25
   sceneChangeDelay: 0.15

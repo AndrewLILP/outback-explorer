@@ -19,4 +19,4 @@ MonoBehaviour:
   funFact: One of five egg-laying mammals! Males have venomous spurs and they glow
     blue-green under UV light!
   icon: {fileID: 0}
-  discoveryRange: 8
+  discoveryRange: 20

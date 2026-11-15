@@ -31,9 +31,13 @@ namespace RelaxingDrive.UI
     /// and saves settings when the panel closes.
     ///
     /// There is no cross-scene callback to PauseFlowManager: the gameplay scene
-    /// is already unloaded by the time this script runs. Resume / New Game /
-    /// Change Car load a scene directly. Save talks to GameSaveManager, which
+    /// is already unloaded by the time this script runs. Resume / New Game
+    /// load a scene directly. Save talks to GameSaveManager, which
     /// survives the scene swap because it's DontDestroyOnLoad.
+    ///
+    /// CHANGE CAR is currently disabled (car selection scene is off). All of its
+    /// code is commented out below and marked "CHANGE CAR (disabled)" - restore
+    /// those blocks plus the button line in PauseMenu.uxml to bring it back.
     ///
     /// This scene is never time-scaled; timers below still use unscaled time
     /// so they keep working if that ever changes.
@@ -48,8 +52,9 @@ namespace RelaxingDrive.UI
         [Tooltip("Exact name of the main gameplay scene in Build Settings.")]
         [SerializeField] private string gameplaySceneName = "RCC_City_CarSelectionWithLoadedScene";
 
-        [Tooltip("Exact name of the car selection scene in Build Settings.")]
-        [SerializeField] private string carSelectionSceneName = "RCC_City_CarSelectionWithLoadScene";
+        // CHANGE CAR (disabled)
+        // [Tooltip("Exact name of the car selection scene in Build Settings.")]
+        // [SerializeField] private string carSelectionSceneName = "RCC_City_CarSelectionWithLoadScene";
 
         [Header("UI Sounds")]
         [Tooltip("Focus moved to another button (keyboard, gamepad or mouse hover).")]
@@ -97,7 +102,7 @@ namespace RelaxingDrive.UI
         private Button resumeButton;
         private Button saveButton;
         private Button newGameButton;
-        private Button changeCarsButton;
+        // private Button changeCarsButton;   // CHANGE CAR (disabled)
         private Button instructionsButton;
         private Button settingsButton;
         private Button quitButton;
@@ -190,7 +195,7 @@ namespace RelaxingDrive.UI
             resumeButton = root.Q<Button>("ResumeButton");
             saveButton = root.Q<Button>("SaveButton");
             newGameButton = root.Q<Button>("NewGameButton");
-            changeCarsButton = root.Q<Button>("ChangeCarsButton");
+            // changeCarsButton = root.Q<Button>("ChangeCarsButton");   // CHANGE CAR (disabled)
             instructionsButton = root.Q<Button>("InstructionsButton");
             settingsButton = root.Q<Button>("SettingsButton");
             quitButton = root.Q<Button>("QuitButton");
@@ -205,7 +210,7 @@ namespace RelaxingDrive.UI
             WireButton(resumeButton, OnResumeClicked);
             WireButton(saveButton, OnSaveClicked);
             WireButton(newGameButton, OnNewGameClicked);
-            WireButton(changeCarsButton, OnChangeCarsClicked);
+            // WireButton(changeCarsButton, OnChangeCarsClicked);   // CHANGE CAR (disabled)
             WireButton(instructionsButton, OnInstructionsClicked);
             WireButton(settingsButton, OnSettingsClicked);
             WireButton(quitButton, OnQuitClicked);
@@ -302,15 +307,15 @@ namespace RelaxingDrive.UI
         private void ShowPanel(MenuPanel panel)
         {
             // If a panel is missing from the UXML, stay on the main menu and say why,
-    // rather than hiding everything and leaving a blank screen.
-    if (panel == MenuPanel.Settings && settingsPanel == null)
-    {
-        Debug.LogError("[PauseMenuSceneController] No 'SettingsPanel' in PauseMenu.uxml - " +
-                       "check the UIDocument is using the latest file.");
-        panel = MenuPanel.Main;
-    }
+            // rather than hiding everything and leaving a blank screen.
+            if (panel == MenuPanel.Settings && settingsPanel == null)
+            {
+                Debug.LogError("[PauseMenuSceneController] No 'SettingsPanel' in PauseMenu.uxml - " +
+                               "check the UIDocument is using the latest file.");
+                panel = MenuPanel.Main;
+            }
 
-    currentPanel = panel;
+            currentPanel = panel;
 
             SetVisible(pauseContainer, panel == MenuPanel.Main);
             SetVisible(instructionsPanel, panel == MenuPanel.Instructions);
@@ -456,11 +461,12 @@ namespace RelaxingDrive.UI
             }));
         }
 
-        private void OnChangeCarsClicked()
-        {
-            Log($"Change car - loading car selection scene '{carSelectionSceneName}'");
-            LoadSceneAfterDelay(carSelectionSceneName);
-        }
+        // CHANGE CAR (disabled)
+        // private void OnChangeCarsClicked()
+        // {
+        //     Log($"Change car - loading car selection scene '{carSelectionSceneName}'");
+        //     LoadSceneAfterDelay(carSelectionSceneName);
+        // }
 
         private void OnInstructionsClicked() => ShowPanel(MenuPanel.Instructions);
 

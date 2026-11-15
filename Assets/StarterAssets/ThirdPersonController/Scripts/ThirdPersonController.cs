@@ -190,6 +190,15 @@ namespace StarterAssets
             CameraRotation();
         }
 
+           // ADDED (Sunday Drive, river floats): lets the game set where the camera
+   // looks, e.g. behind the player after stepping off the SUP. The camera
+   // angles are private, so without this it returns to its old angle.
+   public void SetCameraAngles(float yaw, float pitch)
+   {
+       _cinemachineTargetYaw = yaw;
+       _cinemachineTargetPitch = pitch;
+   }
+
         private void AssignAnimationIDs()
         {
             _animIDSpeed = Animator.StringToHash("Speed");

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1045ef54ae703dd49b3ef474ef8e7a37, type: 3}
   m_Name: PlatypusPlace
   m_EditorClassIdentifier: Assembly-CSharp::RelaxingDrive.World.RoadData
-  displayName: PlatypusPlace
+  displayName: Platypus Place
   linkedAnimal: {fileID: 11400000, guid: d93186d55b81d5740bb9b6ac6c4b5782, type: 2}

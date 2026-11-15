@@ -1,5 +1,13 @@
 // OnFootState.cs
 // Location: Assets/Scripts/Player/OnFootState.cs
+//
+// UPDATED (Nov 2026, river floats): changes marked "NEW (river)".
+//   - Can arrive somewhere other than next to the car (SetArrivalPoint), used
+//     when stepping off a river craft at the landing.
+//   - Owns BOTH on-foot interactions: entering the car and hopping on a river
+//     craft. One owner for the Interact button and the prompt means they can
+//     never fight. If both are in reach, the board wins (it has the smaller
+//     range, so being that close is a clear signal of intent).
 using UnityEngine;
 using RelaxingDrive.World;
 using StarterAssets;
@@ -9,19 +17,26 @@ namespace RelaxingDrive.Player
     /// <summary>
     /// State when player is walking around (not in car).
     /// Handles character controller movement and interaction detection.
-    /// Shows an input-aware "[E] / (A) Enter Car" prompt when near car.
+    /// Shows an input-aware "[E] / (A) Enter Car" or "Hop on board" prompt.
     ///
     /// Supports two walking-controller paths:
     /// - Starter Assets ThirdPersonController (RCC/Steam scene) - that component
     ///   owns its own movement, input, animation, and Cinemachine camera target.
-    ///   This state only handles car proximity/interaction and the camera handoff.
+    ///   This state only handles interactions and the camera handoff.
     /// - Legacy hand-rolled CharacterController movement (PolyStang/Itch scene) -
     ///   unchanged, drives movement itself and uses FollowCamera.
     ///
-    /// Car entry uses the Interact action (E / gamepad A) via PlayerInputReader.
+    /// Interactions use the Interact action (E / gamepad A) via PlayerInputReader.
     /// </summary>
     public class OnFootState : PlayerState
     {
+        // NEW (river): what the Interact button would do right now.
+        private enum PromptTarget { None, Car, Board }
+
+        // NEW (river): camera tilt (degrees down) when arriving somewhere, e.g. off the SUP.
+        // Matches FloatingState's default view so the hand-off feels continuous.
+        private const float ArrivalCameraPitch = 12f;
+
         private CharacterController characterController;
         private PlayerInteractionDetector interactionDetector;
         private UI.InteractionPromptUI interactionPrompt;
@@ -37,18 +52,38 @@ namespace RelaxingDrive.Player
         private float carInteractionRange = 5f; // was 3f - retuned for largest RCC vehicle (Truck/Pickup)
                                                   // footprint; slightly generous for smaller cars (Coupe, F1)
                                                   // but avoids the prompt feeling unresponsive near big vehicles
-        private bool isNearCar = false;
+
+        // NEW (river): current interaction target and the board in reach (if any)
+        private PromptTarget currentTarget = PromptTarget.None;
+        private RiverLaunchPoint nearbyLaunch;
+
+        // NEW (river): one-off arrival point instead of "next to the car"
+        private bool hasArrivalPoint;
+        private Vector3 arrivalPosition;
+        private Quaternion arrivalRotation;
 
         public OnFootState(PlayerStateManager manager) : base(manager) { }
+
+        /// <summary>
+        /// NEW (river): the next Enter() places the player here instead of beside the car.
+        /// Used once, then forgotten.
+        /// </summary>
+        public void SetArrivalPoint(Vector3 position, Quaternion rotation)
+        {
+            hasArrivalPoint = true;
+            arrivalPosition = position;
+            arrivalRotation = rotation;
+        }
 
         public override void Enter()
         {
             Debug.Log("[OnFootState] ========== ENTERING ON FOOT STATE ==========");
 
-            // This state object is REUSED every time the player gets out of the car,
-            // so reset per-visit fields. Otherwise isNearCar is still true from last
-            // time, CheckCarProximity sees no change, and the prompt never shows.
-            isNearCar = false;
+            // This state object is REUSED every time, so reset per-visit fields.
+            // Otherwise the old target is still set, nothing looks "changed",
+            // and the prompt never shows.
+            currentTarget = PromptTarget.None;
+            nearbyLaunch = null;
 
             // Detect which walking controller this scene's playerCharacter uses.
             // Starter Assets' ThirdPersonController owns its own CharacterController,
@@ -87,18 +122,39 @@ namespace RelaxingDrive.Player
                 Debug.LogWarning("[OnFootState] InteractionPromptUI not found in scene!");
             }
 
-            // Position player next to car (right side for Australian driving)
-            Vector3 exitPosition = stateManager.CarGameObject.transform.position +
-                                  stateManager.CarGameObject.transform.right * stateManager.ExitCarOffset.x;
-            stateManager.PlayerCharacter.transform.position = exitPosition;
-            Debug.Log($"[OnFootState] Player positioned at: {exitPosition}");
+            // NEW (river): arriving from a river craft -> the landing spot.
+            // Otherwise (getting out of the car) -> next to the car, right side
+            // for Australian driving. The CharacterController is still OFF here,
+            // which is what makes setting the position directly safe.
+            if (hasArrivalPoint)
+            {
+                stateManager.PlayerCharacter.transform.SetPositionAndRotation(arrivalPosition, arrivalRotation);
+                hasArrivalPoint = false;
+
+                // NEW (river): the walking controller remembers the camera angle from
+                // BEFORE the float, so it would swing round to that old angle (often in
+                // front of the player). Point it the way the player now faces instead.
+                if (usesExternalController)
+                {
+                    stateManager.PlayerCharacter.GetComponent<ThirdPersonController>()
+                        .SetCameraAngles(arrivalRotation.eulerAngles.y, ArrivalCameraPitch);
+                }
+                Debug.Log($"[OnFootState] Player arrived at: {arrivalPosition}");
+            }
+            else
+            {
+                Vector3 exitPosition = stateManager.CarGameObject.transform.position +
+                                      stateManager.CarGameObject.transform.right * stateManager.ExitCarOffset.x;
+                stateManager.PlayerCharacter.transform.position = exitPosition;
+                Debug.Log($"[OnFootState] Player positioned at: {exitPosition}");
+            }
 
             // Enable player character
             stateManager.PlayerCharacter.SetActive(true);
             characterController.enabled = true;
             Debug.Log($"[OnFootState] Player active: {stateManager.PlayerCharacter.activeSelf}, CharController enabled: {characterController.enabled}");
 
-            // KEEP CAR VISIBLE - Just freeze it in place
+            // KEEP CAR VISIBLE - Just freeze it in place (harmless if already frozen)
             // 1. Freeze car physics (make Rigidbody kinematic)
             Rigidbody carRigidbody = stateManager.CarGameObject.GetComponent<Rigidbody>();
             if (carRigidbody != null)
@@ -143,7 +199,7 @@ namespace RelaxingDrive.Player
                 Debug.LogWarning("[OnFootState] No walking camera available - neither WalkingCameraObject nor FollowCamera is assigned!");
             }
 
-            Debug.Log("[OnFootState] Player exited car - walking mode active");
+            Debug.Log("[OnFootState] Walking mode active");
         }
 
         public override void Update()
@@ -156,8 +212,8 @@ namespace RelaxingDrive.Player
                 HandleMovement();
             }
 
-            CheckCarProximity();
-            HandleCarInteraction();
+            UpdateInteractionTarget();
+            HandleInteraction();
         }
 
         /// <summary>
@@ -217,64 +273,75 @@ namespace RelaxingDrive.Player
             }
         }
 
-        private void CheckCarProximity()
+        /// <summary>
+        /// NEW (river): replaces CheckCarProximity. Works out what Interact would do
+        /// right now (board, car or nothing) and only touches the prompt when that changes.
+        /// </summary>
+        private void UpdateInteractionTarget()
         {
-            float distanceToCar = Vector3.Distance(
-                stateManager.PlayerCharacter.transform.position,
-                stateManager.CarGameObject.transform.position
-            );
+            Vector3 playerPosition = stateManager.PlayerCharacter.transform.position;
 
-            bool wasNearCar = isNearCar;
-            isNearCar = distanceToCar <= carInteractionRange;
+            nearbyLaunch = RiverLaunchPoint.FindInRange(playerPosition);
 
-            // Show/hide interaction prompt
-            if (isNearCar && !wasNearCar)
+            float distanceToCar = Vector3.Distance(playerPosition, stateManager.CarGameObject.transform.position);
+
+            PromptTarget target =
+                nearbyLaunch != null ? PromptTarget.Board :
+                distanceToCar <= carInteractionRange ? PromptTarget.Car :
+                PromptTarget.None;
+
+            if (target == currentTarget) return;
+            currentTarget = target;
+
+            switch (target)
             {
-                ShowCarInteractionPrompt();
-                Debug.Log($"[OnFootState] Near car - distance: {distanceToCar}");
+                case PromptTarget.Board: ShowPrompt(nearbyLaunch.PromptText); break;
+                case PromptTarget.Car:   ShowPrompt("Enter Car"); break;
+                default:                 HidePrompt(); break;
             }
-            else if (!isNearCar && wasNearCar)
+
+            Debug.Log($"[OnFootState] Interaction target → {target}");
+        }
+
+        /// <summary>
+        /// Interact (E or gamepad A). PlayerInputReader merges keyboard and gamepad
+        /// into one action, so this state doesn't care which device was used.
+        /// </summary>
+        private void HandleInteraction()
+        {
+            if (!PlayerInputReader.InteractPressedThisFrame) return;
+
+            switch (currentTarget)
             {
-                HideCarInteractionPrompt();
-                Debug.Log("[OnFootState] Left car area");
+                case PromptTarget.Board:
+                    Debug.Log("[OnFootState] Interact pressed near board - hopping on");
+                    HidePrompt();
+                    stateManager.SwitchToFloating(nearbyLaunch.Craft);
+                    break;
+
+                case PromptTarget.Car:
+                    Debug.Log("[OnFootState] Interact pressed near car - entering car");
+                    HidePrompt();
+                    stateManager.SwitchToDriving();
+                    break;
             }
         }
 
-        private void HandleCarInteraction()
+        private void ShowPrompt(string actionText)
         {
-            // Interact (E or gamepad A) to enter car.
-            // PlayerInputReader merges keyboard and gamepad into one action,
-            // so this state doesn't care which device was used.
-            if (isNearCar && PlayerInputReader.InteractPressedThisFrame)
-            {
-                Debug.Log("[OnFootState] Interact pressed near car - entering car");
-                HideCarInteractionPrompt();
-                stateManager.SwitchToDriving();
-            }
+            // Action text only - InteractionPromptUI adds the E / A keycap itself
+            if (interactionPrompt != null) interactionPrompt.ShowPrompt(actionText);
         }
 
-        private void ShowCarInteractionPrompt()
+        private void HidePrompt()
         {
-            if (interactionPrompt != null)
-            {
-                // Action text only - InteractionPromptUI adds the E / A keycap itself
-                interactionPrompt.ShowPrompt("Enter Car");
-                Debug.Log("[OnFootState] Showing car interaction prompt");
-            }
-        }
-
-        private void HideCarInteractionPrompt()
-        {
-            if (interactionPrompt != null)
-            {
-                interactionPrompt.HidePrompt();
-            }
+            if (interactionPrompt != null) interactionPrompt.HidePrompt();
         }
 
         public override void Exit()
         {
             Debug.Log("[OnFootState] ========== EXITING ON FOOT STATE ==========");
-            HideCarInteractionPrompt();
+            HidePrompt();
             characterController.enabled = false;
             stateManager.PlayerCharacter.SetActive(false);
 
@@ -283,7 +350,8 @@ namespace RelaxingDrive.Player
                 stateManager.WalkingCameraObject.SetActive(false);
             }
 
-            Debug.Log("[OnFootState] Player entered car - switching to driving mode");
+            // FloatingState turns the character and walking camera straight back on;
+            // DrivingState leaves them off.
         }
     }
 }

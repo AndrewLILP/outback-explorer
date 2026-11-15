@@ -11,6 +11,12 @@
 //  - Proximity is just ONE discovery trigger. Future triggers (stop, photo, honk)
 //    build a SightingContext and call SightingManager.ReportSighting() the same way.
 //  - Gizmo colour shows the region: green = Local, orange = Remote.
+//
+// UPDATED (Nov 2026, river floats): changes marked "NEW (river)".
+//  - The player's position now comes from PlayerStateManager.ActivePlayerTransform,
+//    so animals are spotted from the car, on foot AND from a river craft
+//    (and from any future player state, with no change here).
+//  - "On foot" in the sighting context now means "out of the car".
 
 using UnityEngine;
 using RelaxingDrive.UI;
@@ -91,6 +97,7 @@ namespace RelaxingDrive.Animals
 
         /// <summary>
         /// Gets car and walking player from PlayerStateManager, falling back to names.
+        /// Only used by the fallback path when PlayerStateManager is missing.
         /// </summary>
         private void FindPlayerObjects()
         {
@@ -113,17 +120,14 @@ namespace RelaxingDrive.Animals
         }
 
         /// <summary>
-        /// Uses PlayerStateManager.IsDriving rather than activeInHierarchy, because
-        /// the car stays active (just frozen) while the player walks.
+        /// NEW (river): asks PlayerStateManager where the player is, instead of
+        /// checking each state here. Before, this only knew Driving and OnFoot,
+        /// so it returned null while floating and no animal could be spotted.
         /// </summary>
         private Transform GetActivePlayerTransform()
         {
             if (playerStateManager != null)
-            {
-                if (playerStateManager.IsDriving && carObject != null) return carObject.transform;
-                if (playerStateManager.IsOnFoot && walkingPlayerObject != null) return walkingPlayerObject.transform;
-                return null;
-            }
+                return playerStateManager.ActivePlayerTransform;
 
             // Fallback if PlayerStateManager is missing.
             if (walkingPlayerObject != null && walkingPlayerObject.activeInHierarchy) return walkingPlayerObject.transform;
@@ -137,7 +141,9 @@ namespace RelaxingDrive.Animals
             activePlayerTransform = GetActivePlayerTransform();
             if (activePlayerTransform == null)
             {
-                FindPlayerObjects();
+                // NEW (river): null is normal before the RCC car spawns - only
+                // search by name when there's no PlayerStateManager at all.
+                if (playerStateManager == null) FindPlayerObjects();
                 return;
             }
 
@@ -168,7 +174,8 @@ namespace RelaxingDrive.Animals
             SightingManager sightings = SightingManager.Instance;
             if (sightings == null) return; // Only null while the game is quitting.
 
-            bool onFoot = playerStateManager != null && playerStateManager.IsOnFoot;
+            // NEW (river): walking or floating both count as "out of the car".
+            bool onFoot = playerStateManager != null && !playerStateManager.IsDriving;
             var context = new SightingContext(animalData, region, onFoot, transform.position);
 
             SightingResult result = sightings.ReportSighting(context);

@@ -1,11 +1,18 @@
 // PlayerStateManager.cs
+//
+// UPDATED (Nov 2026, river floats): changes marked "NEW (river)".
+//   - FloatingState added (riding a river craft)
+//   - IsFloating, SwitchToFloating(craft), SwitchToOnFootAt(position, rotation)
+//   - ActivePlayerTransform returns the character while floating, so VisitZones,
+//     road names and sightings keep working on the river.
 using UnityEngine;
 using RelaxingDrive.Core;
+using RelaxingDrive.World; // NEW (river): RiverCraftMover
 
 namespace RelaxingDrive.Player
 {
     /// <summary>
-    /// Manages player state transitions between Driving and OnFoot.
+    /// Manages player state transitions between Driving, OnFoot and Floating.
     /// Implements State Pattern - delegates behavior to current state.
     /// Singleton for easy access from other systems.
     ///
@@ -25,7 +32,7 @@ namespace RelaxingDrive.Player
 
         /// <summary>
         /// Fired AFTER the new state's Enter() has run, so listeners can safely
-        /// check IsDriving / IsOnFoot. Passes the new state.
+        /// check IsDriving / IsOnFoot / IsFloating. Passes the new state.
         /// </summary>
         public event System.Action<PlayerState> OnStateChanged;
 
@@ -51,6 +58,7 @@ namespace RelaxingDrive.Player
         private PlayerState currentState;
         private DrivingState drivingState;
         private OnFootState onFootState;
+        private FloatingState floatingState; // NEW (river)
 
         private IVehicleController vehicleController;
         private bool vehicleReady = false;
@@ -66,13 +74,15 @@ namespace RelaxingDrive.Player
 
         public bool IsDriving => currentState is DrivingState;
         public bool IsOnFoot => currentState is OnFootState;
+        public bool IsFloating => currentState is FloatingState; // NEW (river)
 
         // IActivePlayerProvider: the transform the player is currently controlling.
         // VisitZone (and later systems) ask this instead of checking states themselves.
         // Returns null before the RCC car has spawned, which VisitZone safely ignores.
+        // NEW (river): while floating, the character rides the board, so it's the answer.
         public Transform ActivePlayerTransform =>
             IsDriving ? (carGameObject != null ? carGameObject.transform : null) :
-            IsOnFoot  ? (playerCharacter != null ? playerCharacter.transform : null) :
+            (IsOnFoot || IsFloating) ? (playerCharacter != null ? playerCharacter.transform : null) :
             null;
 
         private void Awake()
@@ -106,6 +116,7 @@ namespace RelaxingDrive.Player
 
             drivingState = new DrivingState(this);
             onFootState = new OnFootState(this);
+            floatingState = new FloatingState(this); // NEW (river)
 
             if (carGameObject != null)
             {
@@ -193,6 +204,31 @@ namespace RelaxingDrive.Player
                 return;
             }
             ChangeState(onFootState);
+        }
+
+        /// <summary>
+        /// NEW (river): go on foot at a given spot instead of beside the car
+        /// (e.g. stepping off a river craft at the landing).
+        /// </summary>
+        public void SwitchToOnFootAt(Vector3 position, Quaternion rotation)
+        {
+            onFootState.SetArrivalPoint(position, rotation);
+            SwitchToOnFoot();
+        }
+
+        /// <summary>
+        /// NEW (river): hop onto a river craft. Only allowed on foot - you can't
+        /// drive onto a paddle board.
+        /// </summary>
+        public void SwitchToFloating(RiverCraftMover craft)
+        {
+            if (!IsOnFoot || craft == null || playerCharacter == null)
+            {
+                Debug.LogWarning("[PlayerStateManager] Cannot switch to Floating - must be on foot with a valid craft.");
+                return;
+            }
+            floatingState.SetCraft(craft);
+            ChangeState(floatingState);
         }
 
         private void OnDestroy()
