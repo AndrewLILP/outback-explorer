@@ -5,6 +5,10 @@
 //   - IsFloating, SwitchToFloating(craft), SwitchToOnFootAt(position, rotation)
 //   - ActivePlayerTransform returns the character while floating, so VisitZones,
 //     road names and sightings keep working on the river.
+//
+// UPDATED (Nov 2026, fuel): changes marked "NEW (fuel)".
+//   - CarEntryLocked + SetCarEntryLocked(bool): FuelPump locks the car while
+//     refuelling; OnFootState hides "Enter Car" and blocks entry until unlocked.
 using UnityEngine;
 using RelaxingDrive.Core;
 using RelaxingDrive.World; // NEW (river): RiverCraftMover
@@ -75,6 +79,10 @@ namespace RelaxingDrive.Player
         public bool IsDriving => currentState is DrivingState;
         public bool IsOnFoot => currentState is OnFootState;
         public bool IsFloating => currentState is FloatingState; // NEW (river)
+
+        // NEW (fuel): while true, the player can't get into the car.
+        // Set by FuelPump while refuelling; could be reused later (e.g. a cutscene).
+        public bool CarEntryLocked { get; private set; }
 
         // IActivePlayerProvider: the transform the player is currently controlling.
         // VisitZone (and later systems) ask this instead of checking states themselves.
@@ -229,6 +237,20 @@ namespace RelaxingDrive.Player
             }
             floatingState.SetCraft(craft);
             ChangeState(floatingState);
+        }
+
+        /// <summary>
+        /// NEW (fuel): lock or unlock getting into the car.
+        /// OnFootState reads CarEntryLocked every frame, so the "Enter Car"
+        /// prompt appears by itself as soon as this is unlocked.
+        /// </summary>
+        public void SetCarEntryLocked(bool locked)
+        {
+            if (CarEntryLocked == locked) return;
+            CarEntryLocked = locked;
+
+            if (logStateChanges)
+                Debug.Log($"[PlayerStateManager] Car entry {(locked ? "LOCKED" : "unlocked")}");
         }
 
         private void OnDestroy()

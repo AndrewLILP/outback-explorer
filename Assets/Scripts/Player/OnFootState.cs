@@ -8,6 +8,11 @@
 //     craft. One owner for the Interact button and the prompt means they can
 //     never fight. If both are in reach, the board wins (it has the smaller
 //     range, so being that close is a clear signal of intent).
+//
+// UPDATED (Nov 2026, fuel): change marked "NEW (fuel)".
+//   - The car only counts as a target while PlayerStateManager.CarEntryLocked
+//     is false (FuelPump locks it while refuelling). When the lock lifts, the
+//     target changes to Car and the normal "Enter Car" prompt shows by itself.
 using UnityEngine;
 using RelaxingDrive.World;
 using StarterAssets;
@@ -285,9 +290,12 @@ namespace RelaxingDrive.Player
 
             float distanceToCar = Vector3.Distance(playerPosition, stateManager.CarGameObject.transform.position);
 
+            // NEW (fuel): a locked car (refuelling) is never a target - no prompt, no entry.
+            bool carAvailable = distanceToCar <= carInteractionRange && !stateManager.CarEntryLocked;
+
             PromptTarget target =
                 nearbyLaunch != null ? PromptTarget.Board :
-                distanceToCar <= carInteractionRange ? PromptTarget.Car :
+                carAvailable ? PromptTarget.Car :
                 PromptTarget.None;
 
             if (target == currentTarget) return;

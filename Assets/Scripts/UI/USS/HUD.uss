@@ -371,6 +371,17 @@
 }
 
 /* ===================================
+   NEW (fuel): FUEL WARNING (FuelWarningUI)
+   Reuses the speed-warning card. Only differences: no screen dim (the
+   refuel message stays up for up to a minute while the player walks around).
+   To move it off-centre later, e.g. under the road name:
+       justify-content: flex-start; padding-top: 110px;
+   =================================== */
+.speed-warning.fuel-warning {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* ===================================
    ROAD NAME (top-centre card, RoadNameUI)
    To show it in the screen centre instead: change "top: 40px" to "top: 40%".
    =================================== */

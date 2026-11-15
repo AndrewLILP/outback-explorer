@@ -118,6 +118,16 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
+        <!-- NEW (fuel): fuel card (FuelWarningUI). Reuses the speed-warning styling;
+             "fuel-warning" removes the screen dim so it isn't heavy during a 1-minute fill.
+             Sits just before SpeedWarning so the speed warning still draws on top. -->
+        <ui:VisualElement name="FuelWarning" class="speed-warning fuel-warning speed-warning--hidden" picking-mode="Ignore">
+            <ui:VisualElement name="FuelWarningCard" class="speed-warning-card" picking-mode="Ignore">
+                <ui:Label name="FuelWarningText" text="Refuelling" class="speed-warning-text" picking-mode="Ignore" />
+                <ui:Label name="FuelWarningDetail" text="0%" class="speed-warning-limit" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <!-- Speed warning: last child of HUD so it fills the full screen and draws on top -->
         <!-- CHANGED (limit): rectangle card with two lines - message + the area's limit -->
         <ui:VisualElement name="SpeedWarning" class="speed-warning speed-warning--hidden" picking-mode="Ignore">
