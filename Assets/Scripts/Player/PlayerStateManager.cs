@@ -64,6 +64,8 @@ namespace RelaxingDrive.Player
         private OnFootState onFootState;
         private FloatingState floatingState; // NEW (river)
 
+        private BallooningState ballooningState; // NEW (balloon)
+
         private IVehicleController vehicleController;
         private bool vehicleReady = false;
 
@@ -80,6 +82,8 @@ namespace RelaxingDrive.Player
         public bool IsOnFoot => currentState is OnFootState;
         public bool IsFloating => currentState is FloatingState; // NEW (river)
 
+        public bool IsBallooning => currentState is BallooningState; // NEW (balloon)
+
         // NEW (fuel): while true, the player can't get into the car.
         // Set by FuelPump while refuelling; could be reused later (e.g. a cutscene).
         public bool CarEntryLocked { get; private set; }
@@ -90,7 +94,7 @@ namespace RelaxingDrive.Player
         // NEW (river): while floating, the character rides the board, so it's the answer.
         public Transform ActivePlayerTransform =>
             IsDriving ? (carGameObject != null ? carGameObject.transform : null) :
-            (IsOnFoot || IsFloating) ? (playerCharacter != null ? playerCharacter.transform : null) :
+            (IsOnFoot || IsFloating || IsBallooning) ? (playerCharacter != null ? playerCharacter.transform : null) : // NEW (balloon)
             null;
 
         private void Awake()
@@ -125,6 +129,7 @@ namespace RelaxingDrive.Player
             drivingState = new DrivingState(this);
             onFootState = new OnFootState(this);
             floatingState = new FloatingState(this); // NEW (river)
+            ballooningState = new BallooningState(this); // NEW (balloon)
 
             if (carGameObject != null)
             {
@@ -237,6 +242,17 @@ namespace RelaxingDrive.Player
             }
             floatingState.SetCraft(craft);
             ChangeState(floatingState);
+        }
+
+        public void SwitchToBallooning(BalloonMover balloon)
+        {
+            if (!IsOnFoot || balloon == null || playerCharacter == null)
+            {
+                Debug.LogWarning("[PlayerStateManager] Cannot switch to Ballooning - must be on foot with a valid balloon.");
+                return;
+            }
+            ballooningState.SetBalloon(balloon);
+            ChangeState(ballooningState);
         }
 
         /// <summary>

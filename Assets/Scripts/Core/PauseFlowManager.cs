@@ -1,7 +1,12 @@
 // PauseFlowManager.cs
 // Location: Assets/Scripts/Core/PauseFlowManager.cs
+//
+// UPDATED (Nov 2026): captures the car's position before the gameplay scene
+// unloads, so the pause menu can offer "Where I left off". Changes are marked
+// "NEW (resume choice)".
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using RelaxingDrive.Core;      // NEW (resume choice)
 using RelaxingDrive.Player;
 
 namespace RelaxingDrive.UI
@@ -26,15 +31,21 @@ namespace RelaxingDrive.UI
     /// directly to SceneManager and to GameSaveManager, which stays alive
     /// because it's DontDestroyOnLoad.
     ///
-    /// Known, accepted tradeoff: player/car position resets on Resume, since
-    /// the gameplay scene reloads fresh rather than being preserved frozen
-    /// underneath. Revisit later if position preservation is wanted.
+    /// NEW (resume choice): because the scene reloads fresh on Resume, the car's
+    /// position is snapshotted into ResumeSpawnHandoff (a static class that
+    /// survives scene changes) just before unloading. ResumeSpawnController
+    /// puts the car back if the player picks "Where I left off".
     /// </summary>
     public class PauseFlowManager : MonoBehaviour
     {
         [Header("Pause Scene")]
         [Tooltip("Must exactly match the scene name in Build Settings.")]
         [SerializeField] private string pauseSceneName = "PauseMenuScene";
+
+        // NEW (resume choice)
+        [Header("Resume Position")]
+        [Tooltip("Captures the car's position before pausing. Leave empty to always resume at the start.")]
+        [SerializeField] private ResumeSpawnController resumeSpawn;
 
         [SerializeField] private bool showDebugLogs = true;
 
@@ -75,6 +86,13 @@ namespace RelaxingDrive.UI
         {
             if (isEnteringPause) return;
             isEnteringPause = true;
+
+            // NEW (resume choice): snapshot BEFORE the scene unloads - after
+            // LoadScene the car and everything else here will be gone.
+            if (resumeSpawn != null)
+                resumeSpawn.Capture();
+            else
+                ResumeSpawnHandoff.Clear();
 
             Log($"Entering pause - loading '{pauseSceneName}' (replaces gameplay scene)");
             SceneManager.LoadScene(pauseSceneName, LoadSceneMode.Single);

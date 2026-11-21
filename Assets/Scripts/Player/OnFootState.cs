@@ -36,7 +36,8 @@ namespace RelaxingDrive.Player
     public class OnFootState : PlayerState
     {
         // NEW (river): what the Interact button would do right now.
-        private enum PromptTarget { None, Car, Board }
+        private enum PromptTarget { None, Car, Board, Balloon } // NEW (balloon): Balloon
+ 
 
         // NEW (river): camera tilt (degrees down) when arriving somewhere, e.g. off the SUP.
         // Matches FloatingState's default view so the hand-off feels continuous.
@@ -63,6 +64,10 @@ namespace RelaxingDrive.Player
         private RiverLaunchPoint nearbyLaunch;
 
         // NEW (river): one-off arrival point instead of "next to the car"
+
+        private BalloonLaunchPoint nearbyBalloon; // NEW (balloon)
+
+
         private bool hasArrivalPoint;
         private Vector3 arrivalPosition;
         private Quaternion arrivalRotation;
@@ -89,6 +94,7 @@ namespace RelaxingDrive.Player
             // and the prompt never shows.
             currentTarget = PromptTarget.None;
             nearbyLaunch = null;
+            nearbyBalloon = null; // NEW (balloon)
 
             // Detect which walking controller this scene's playerCharacter uses.
             // Starter Assets' ThirdPersonController owns its own CharacterController,
@@ -282,19 +288,24 @@ namespace RelaxingDrive.Player
         /// NEW (river): replaces CheckCarProximity. Works out what Interact would do
         /// right now (board, car or nothing) and only touches the prompt when that changes.
         /// </summary>
+        /// 
+        // 4. REPLACE the whole UpdateInteractionTarget method:
         private void UpdateInteractionTarget()
         {
             Vector3 playerPosition = stateManager.PlayerCharacter.transform.position;
 
             nearbyLaunch = RiverLaunchPoint.FindInRange(playerPosition);
+            nearbyBalloon = BalloonLaunchPoint.FindInRange(playerPosition); // NEW (balloon)
 
             float distanceToCar = Vector3.Distance(playerPosition, stateManager.CarGameObject.transform.position);
 
             // NEW (fuel): a locked car (refuelling) is never a target - no prompt, no entry.
             bool carAvailable = distanceToCar <= carInteractionRange && !stateManager.CarEntryLocked;
 
+            // Priority: board, balloon, car - the more specific, closer-range things win.
             PromptTarget target =
                 nearbyLaunch != null ? PromptTarget.Board :
+                nearbyBalloon != null ? PromptTarget.Balloon : // NEW (balloon)
                 carAvailable ? PromptTarget.Car :
                 PromptTarget.None;
 
@@ -303,18 +314,21 @@ namespace RelaxingDrive.Player
 
             switch (target)
             {
-                case PromptTarget.Board: ShowPrompt(nearbyLaunch.PromptText); break;
-                case PromptTarget.Car:   ShowPrompt("Enter Car"); break;
-                default:                 HidePrompt(); break;
+                case PromptTarget.Board:   ShowPrompt(nearbyLaunch.PromptText); break;
+                case PromptTarget.Balloon: ShowPrompt(nearbyBalloon.PromptText); break; // NEW (balloon)
+                case PromptTarget.Car:     ShowPrompt("Enter Car"); break;
+                default:                   HidePrompt(); break;
             }
 
             Debug.Log($"[OnFootState] Interaction target → {target}");
         }
 
+
         /// <summary>
         /// Interact (E or gamepad A). PlayerInputReader merges keyboard and gamepad
         /// into one action, so this state doesn't care which device was used.
         /// </summary>
+        // 5. REPLACE the whole HandleInteraction method:
         private void HandleInteraction()
         {
             if (!PlayerInputReader.InteractPressedThisFrame) return;
@@ -325,6 +339,12 @@ namespace RelaxingDrive.Player
                     Debug.Log("[OnFootState] Interact pressed near board - hopping on");
                     HidePrompt();
                     stateManager.SwitchToFloating(nearbyLaunch.Craft);
+                    break;
+
+                case PromptTarget.Balloon: // NEW (balloon)
+                    Debug.Log("[OnFootState] Interact pressed near balloon - climbing in");
+                    HidePrompt();
+                    stateManager.SwitchToBallooning(nearbyBalloon.Balloon);
                     break;
 
                 case PromptTarget.Car:

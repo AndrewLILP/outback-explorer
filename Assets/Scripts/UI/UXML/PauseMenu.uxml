@@ -5,7 +5,10 @@
         <!-- Main menu. Button order here = up/down navigation order. -->
         <ui:VisualElement name="PauseContainer" class="pause-container">
             <ui:Label text="Paused" class="pause-title"/>
+            <!-- NEW (resume choice): Resume = where the player left off;
+                 Return to start = the scene's normal RCC_Spawner position. -->
             <ui:Button name="ResumeButton" text="Resume" class="pause-button"/>
+            <ui:Button name="ResumeStartButton" text="Return to start position" class="pause-button"/>
             <ui:Button name="SaveButton" text="Save game" class="pause-button"/>
             <ui:Button name="InstructionsButton" text="How to play" class="pause-button"/>
             <ui:Button name="SettingsButton" text="Settings" class="pause-button"/>
@@ -15,7 +18,8 @@
             -->
             <ui:Button name="NewGameButton" text="New game" class="pause-button"/>
             <ui:Button name="QuitButton" text="Quit to desktop" class="pause-button pause-button--quiet"/>
-            <ui:Label text="Esc / B  back" class="pause-hint"/>
+            <!-- NEW (resume choice): "Esc / B  back" hint removed - Esc / B no longer
+                 resumes from this main menu; the player picks a Resume button. -->
         </ui:VisualElement>
 
         <!-- How to play. Grouped: driving / camera / system. -->

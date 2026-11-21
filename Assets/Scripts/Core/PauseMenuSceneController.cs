@@ -1,9 +1,13 @@
 // PauseMenuSceneController.cs
 // Location: Assets/Scripts/Core/PauseMenuSceneController.cs
+//
+// UPDATED (Nov 2026): two resume options - "Resume" (where the player left
+// off) and "Return to start position" (RCC_Spawner). Esc / B and gamepad Start
+// no longer resume from the main menu, so the player always picks one.
+// Changes are marked "NEW (resume choice)".
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using RelaxingDrive.Core;
@@ -20,8 +24,10 @@ namespace RelaxingDrive.UI
     ///     into Submit (clicks the focused button); Esc/B into Cancel.
     ///   - Mouse hover FOCUSES the button, so mouse and gamepad share one
     ///     highlight (USS :focus) instead of showing two different ones.
-    ///   - Cancel (Esc / B) goes back one level; from the main menu it resumes.
-    ///   - Start (gamepad) resumes, because it's the button that paused.
+    ///   - Cancel (Esc / B) goes back one level; on the main menu it does nothing.
+    ///   - NEW (resume choice): neither Esc / B nor gamepad Start resumes - the
+    ///     player picks "Resume" or "Return to start position", so they never
+    ///     land somewhere they didn't choose.
     ///
     /// Sounds: navigate (focus moved), submit (button pressed), back (cancel).
     /// Scene changes wait a moment so the click sound isn't cut off.
@@ -34,6 +40,11 @@ namespace RelaxingDrive.UI
     /// is already unloaded by the time this script runs. Resume / New Game
     /// load a scene directly. Save talks to GameSaveManager, which
     /// survives the scene swap because it's DontDestroyOnLoad.
+    ///
+    /// NEW (resume choice): the car's position was captured into
+    /// ResumeSpawnHandoff (static, survives scene loads) before this scene
+    /// opened. The Resume buttons just set its mode; ResumeSpawnController in
+    /// the gameplay scene does the actual move.
     ///
     /// CHANGE CAR is currently disabled (car selection scene is off). All of its
     /// code is commented out below and marked "CHANGE CAR (disabled)" - restore
@@ -69,8 +80,8 @@ namespace RelaxingDrive.UI
         [SerializeField] private float tickMinInterval = 0.06f;
 
         [Header("Timing")]
-        [Tooltip("Ignore Cancel/Resume input for this long after the scene opens, so the " +
-                 "Esc/Start press that opened the menu can't immediately close it.")]
+        [Tooltip("Ignore Cancel input for this long after the scene opens, so the " +
+                 "Esc press that opened the menu can't immediately act on it.")]
         [SerializeField] private float inputGraceSeconds = 0.25f;
         [Tooltip("Delay before loading another scene, so the click sound is heard.")]
         [SerializeField] private float sceneChangeDelay = 0.15f;
@@ -100,6 +111,7 @@ namespace RelaxingDrive.UI
         private SettingsPanelController settingsController;
 
         private Button resumeButton;
+        private Button resumeStartButton;   // NEW (resume choice)
         private Button saveButton;
         private Button newGameButton;
         // private Button changeCarsButton;   // CHANGE CAR (disabled)
@@ -112,7 +124,7 @@ namespace RelaxingDrive.UI
         private Button confirmNewGameButton;
 
         private AudioSource audioSource;
-        private InputAction resumeAction;   // gamepad Start resumes
+        // NEW (resume choice): the gamepad Start "resume" action was removed.
 
         private MenuPanel currentPanel = MenuPanel.Main;
         private Button lastMainMenuButton;          // re-focused when returning from a sub-panel
@@ -135,34 +147,19 @@ namespace RelaxingDrive.UI
             audioSource = GetComponent<AudioSource>();
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
-
-            // Small inline action: this scene has no PlayerInputReader, and only needs Start.
-            // (Esc is already handled as Cancel by the EventSystem's UI actions.)
-            resumeAction = new InputAction("ResumeFromPause", InputActionType.Button, "<Gamepad>/start");
         }
 
         private void OnEnable()
         {
             readyTime = Time.unscaledTime + inputGraceSeconds;
 
-            resumeAction.performed += OnResumeActionPerformed;
-            resumeAction.Enable();
-
             StartCoroutine(InitializeWhenReady());
         }
 
         private void OnDisable()
         {
-            resumeAction.performed -= OnResumeActionPerformed;
-            resumeAction.Disable();
-
             // Leaving the scene (resume, quit...) - make sure settings reach disk.
             settingsController?.SaveSettings();
-        }
-
-        private void OnDestroy()
-        {
-            resumeAction?.Dispose();
         }
 
         #endregion
@@ -193,6 +190,7 @@ namespace RelaxingDrive.UI
             confirmPanel = root.Q<VisualElement>("ConfirmPanel");
 
             resumeButton = root.Q<Button>("ResumeButton");
+            resumeStartButton = root.Q<Button>("ResumeStartButton");   // NEW (resume choice)
             saveButton = root.Q<Button>("SaveButton");
             newGameButton = root.Q<Button>("NewGameButton");
             // changeCarsButton = root.Q<Button>("ChangeCarsButton");   // CHANGE CAR (disabled)
@@ -208,6 +206,7 @@ namespace RelaxingDrive.UI
             saveButtonText = saveButton != null ? saveButton.text : "Save game";
 
             WireButton(resumeButton, OnResumeClicked);
+            WireButton(resumeStartButton, OnResumeStartClicked);   // NEW (resume choice)
             WireButton(saveButton, OnSaveClicked);
             WireButton(newGameButton, OnNewGameClicked);
             // WireButton(changeCarsButton, OnChangeCarsClicked);   // CHANGE CAR (disabled)
@@ -384,12 +383,14 @@ namespace RelaxingDrive.UI
             evt.StopPropagation();
             if (isTransitioning || Time.unscaledTime < readyTime) return;
 
-            PlaySound(backSound);
+            // NEW (resume choice): no back sound on the main menu, since nothing happens.
+            if (currentPanel != MenuPanel.Main)
+                PlaySound(backSound);
 
             switch (currentPanel)
             {
                 case MenuPanel.Main:
-                    Resume();
+                    // NEW (resume choice): no quick resume - the player picks a button.
                     break;
                 case MenuPanel.Settings:
                     CloseSettings();
@@ -398,13 +399,6 @@ namespace RelaxingDrive.UI
                     ShowMainMenu();
                     break;
             }
-        }
-
-        private void OnResumeActionPerformed(InputAction.CallbackContext context)
-        {
-            if (isTransitioning || Time.unscaledTime < readyTime) return;
-            PlaySound(backSound);
-            Resume();
         }
 
         private void OnAnyPointerUp(PointerUpEvent evt)
@@ -417,11 +411,15 @@ namespace RelaxingDrive.UI
 
         #region Button Actions
 
-        private void OnResumeClicked() => Resume();
+        // NEW (resume choice): each button sets the mode, then reloads gameplay.
+        private void OnResumeClicked() => Resume(ResumeSpawnMode.CurrentPosition);
 
-        private void Resume()
+        private void OnResumeStartClicked() => Resume(ResumeSpawnMode.StartPosition);
+
+        private void Resume(ResumeSpawnMode mode)
         {
-            Log($"Resume - loading gameplay scene '{gameplaySceneName}'");
+            ResumeSpawnHandoff.SetMode(mode);
+            Log($"Resume ({mode}) - loading gameplay scene '{gameplaySceneName}'");
             LoadSceneAfterDelay(gameplaySceneName);
         }
 
@@ -451,6 +449,10 @@ namespace RelaxingDrive.UI
                 Debug.LogError("[PauseMenuSceneController] GameSaveManager not found!");
                 return;
             }
+
+            // NEW (resume choice): forget the paused position, so the new game
+            // starts at RCC_Spawner instead of where the old game was.
+            ResumeSpawnHandoff.Clear();
 
             isTransitioning = true;
             StartCoroutine(RunAfterDelay(() =>
